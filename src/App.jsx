@@ -1,8 +1,19 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 /* ============================================
-   FOTOKASH — Application complète avec routing
+   FOTOKASH — Application responsive
    ============================================ */
+
+// Hook responsive
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  useEffect(() => {
+    const handle = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handle);
+    return () => window.removeEventListener("resize", handle);
+  }, []);
+  return isMobile;
+}
 
 const EVENTS = [
   { id: 1, slug: "mariage-sarah-konan", name: "Mariage Sarah & Konan", date: "23 mars 2026", photos: 247, sold: 89, revenue: 34500, status: "live", cover: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" },
@@ -34,12 +45,8 @@ const DASHBOARD_PHOTOS = [
 ];
 
 const REVENUE_DATA = [
-  { month: "Oct", amount: 18000 },
-  { month: "Nov", amount: 32000 },
-  { month: "Dec", amount: 45000 },
-  { month: "Jan", amount: 28000 },
-  { month: "Fév", amount: 52000 },
-  { month: "Mar", amount: 127000 },
+  { month: "Oct", amount: 18000 },{ month: "Nov", amount: 32000 },{ month: "Dec", amount: 45000 },
+  { month: "Jan", amount: 28000 },{ month: "Fév", amount: 52000 },{ month: "Mar", amount: 127000 },
 ];
 
 const PACKS = [
@@ -48,7 +55,6 @@ const PACKS = [
   { count: 11, price: 1000, label: "+10 photos", savings: "55%" },
 ];
 
-/* ============ ICONS ============ */
 const Icon = ({ type, size = 20 }) => {
   const props = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round" };
   const icons = {
@@ -69,11 +75,12 @@ const Icon = ({ type, size = 20 }) => {
     mail: <svg {...props}><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>,
     lock: <svg {...props}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
     phone: <svg {...props}><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,
-    globe: <svg {...props}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>,
     face: <svg {...props} strokeWidth="1.2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/><line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/></svg>,
+    menu: <svg {...props}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+    close: <svg {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
   };
   return icons[type] || null;
-};
+}
 
 const WatermarkOverlay = () => (
   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.08)", pointerEvents: "none" }}>
@@ -96,73 +103,63 @@ const MiniChart = ({ data }) => {
   );
 };
 
-/* ============================================
-   LANDING PAGE — fotokash.com
-   ============================================ */
+/* ============ LANDING PAGE ============ */
 function LandingPage({ navigate }) {
+  const m = useIsMobile();
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
-      {/* Nav */}
-      <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: m ? "16px 20px" : "20px 40px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, background: "#E8593C", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 20, letterSpacing: 0.5 }}>FotoKash</span>
+          <div style={{ width: 32, height: 32, background: "#E8593C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>F</div>
+          <span style={{ fontWeight: 700, fontSize: m ? 17 : 20 }}>FotoKash</span>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={() => navigate("login")} style={{ padding: "10px 24px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, color: "#fff", fontSize: 14, cursor: "pointer" }}>Connexion</button>
-          <button onClick={() => navigate("login")} style={{ padding: "10px 24px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>S'inscrire</button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {!m && <button onClick={() => navigate("login")} style={{ padding: "10px 20px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>Connexion</button>}
+          <button onClick={() => navigate("login")} style={{ padding: "10px 20px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{m ? "Connexion" : "S'inscrire"}</button>
         </div>
       </nav>
-
-      {/* Hero */}
-      <div style={{ textAlign: "center", padding: "80px 40px 60px", maxWidth: 700, margin: "0 auto" }}>
-        <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 4, color: "#E8593C", fontWeight: 600, marginBottom: 20 }}>Plateforme photo intelligente</div>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 52, fontWeight: 700, lineHeight: 1.1, margin: "0 0 20px" }}>Vos photos.<br/>Reconnues. Vendues.<br/>Instantanément.</h1>
-        <p style={{ fontSize: 18, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, margin: "0 0 36px" }}>Uploadez vos photos, laissez l'IA trouver les visages, et vendez par Mobile Money. Vos clients se retrouvent en un selfie.</p>
-        <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-          <button onClick={() => navigate("login")} style={{ padding: "16px 36px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}>Commencer gratuitement</button>
-          <button onClick={() => navigate("event")} style={{ padding: "16px 36px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 16, cursor: "pointer" }}>Voir une démo client</button>
+      <div style={{ textAlign: "center", padding: m ? "48px 20px 40px" : "80px 40px 60px", maxWidth: 700, margin: "0 auto" }}>
+        <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 3, color: "#E8593C", fontWeight: 600, marginBottom: 16 }}>Plateforme photo intelligente</div>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 30 : 52, fontWeight: 700, lineHeight: 1.1, margin: "0 0 16px" }}>Vos photos.<br/>Reconnues. Vendues.<br/>Instantanément.</h1>
+        <p style={{ fontSize: m ? 15 : 18, color: "rgba(255,255,255,0.5)", lineHeight: 1.6, margin: "0 0 28px" }}>Uploadez vos photos, laissez l'IA trouver les visages, et vendez par Mobile Money.</p>
+        <div style={{ display: "flex", flexDirection: m ? "column" : "row", gap: 12, justifyContent: "center" }}>
+          <button onClick={() => navigate("login")} style={{ padding: "16px 28px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}>Commencer gratuitement</button>
+          <button onClick={() => navigate("event")} style={{ padding: "16px 28px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 15, cursor: "pointer" }}>Voir une démo client</button>
         </div>
       </div>
-
-      {/* Features */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, padding: "20px 40px 60px", maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "repeat(3, 1fr)", gap: 14, padding: m ? "0 20px 40px" : "20px 40px 60px", maxWidth: 900, margin: "0 auto" }}>
         {[
-          { icon: "face", title: "Reconnaissance faciale", desc: "Vos clients se retrouvent en prenant un simple selfie parmi des centaines de photos." },
-          { icon: "qr", title: "QR codes uniques", desc: "Chaque photo a son QR. Scannez, payez, téléchargez — en 10 secondes." },
-          { icon: "phone", title: "Paiement Mobile Money", desc: "Orange Money, MTN MoMo, Wave — vos clients paient avec ce qu'ils utilisent déjà." },
+          { icon: "face", title: "Reconnaissance faciale", desc: "Vos clients se retrouvent en prenant un simple selfie." },
+          { icon: "qr", title: "QR codes uniques", desc: "Scannez, payez, téléchargez — en 10 secondes." },
+          { icon: "phone", title: "Paiement Mobile Money", desc: "Orange Money, MTN MoMo, Wave." },
         ].map((f, i) => (
-          <div key={i} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "28px 24px", textAlign: "center" }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(232,89,60,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", color: "#E8593C" }}><Icon type={f.icon} size={24}/></div>
-            <h3 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 8px" }}>{f.title}</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.6, margin: 0 }}>{f.desc}</p>
+          <div key={i} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: m ? "20px" : "28px 24px", textAlign: "center" }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(232,89,60,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", color: "#E8593C" }}><Icon type={f.icon} size={22}/></div>
+            <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 6px" }}>{f.title}</h3>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", lineHeight: 1.5, margin: 0 }}>{f.desc}</p>
           </div>
         ))}
       </div>
-
-      {/* Recent events section */}
-      <div style={{ padding: "40px 40px 80px", maxWidth: 900, margin: "0 auto" }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 28, fontWeight: 700, textAlign: "center", marginBottom: 32 }}>Événements récents</h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+      <div style={{ padding: m ? "20px 20px 60px" : "40px 40px 80px", maxWidth: 900, margin: "0 auto" }}>
+        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 22 : 28, fontWeight: 700, textAlign: "center", marginBottom: 24 }}>Événements récents</h2>
+        <div style={{ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
           {EVENTS.map(ev => (
             <div key={ev.id} onClick={() => navigate("event")} style={{ borderRadius: 12, overflow: "hidden", cursor: "pointer", position: "relative", aspectRatio: "3/4" }}>
               <img src={ev.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.5)" }}/>
               <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.8))" }}/>
-              <div style={{ position: "absolute", bottom: 14, left: 14, right: 14 }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{ev.name}</div>
+              <div style={{ position: "absolute", bottom: 12, left: 12, right: 12 }}>
+                <div style={{ fontSize: m ? 12 : 14, fontWeight: 600 }}>{ev.name}</div>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{ev.photos} photos</div>
               </div>
             </div>
           ))}
         </div>
       </div>
-
-      {/* Footer */}
-      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "24px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.3)" }}>FotoKash 2026 — Tous droits réservés</span>
-        <div style={{ display: "flex", gap: 20 }}>
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: m ? "20px" : "24px 40px", display: "flex", flexDirection: m ? "column" : "row", justifyContent: "space-between", alignItems: m ? "flex-start" : "center", gap: 12 }}>
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>FotoKash 2026</span>
+        <div style={{ display: "flex", gap: 16 }}>
           {["Tarifs", "À propos", "Contact", "CGU"].map(l => (
-            <span key={l} style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>{l}</span>
+            <span key={l} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>{l}</span>
           ))}
         </div>
       </div>
@@ -170,10 +167,9 @@ function LandingPage({ navigate }) {
   );
 }
 
-/* ============================================
-   LOGIN PAGE — fotokash.com/login
-   ============================================ */
+/* ============ LOGIN PAGE ============ */
 function LoginPage({ navigate }) {
+  const m = useIsMobile();
   const [mode, setMode] = useState("login");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -181,106 +177,83 @@ function LoginPage({ navigate }) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
-    setLoading(true);
-    setTimeout(() => { setLoading(false); navigate("dashboard"); }, 1500);
-  };
+  const handleSubmit = () => { setLoading(true); setTimeout(() => { setLoading(false); navigate("dashboard"); }, 1500); };
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex" }}>
-      {/* Left panel */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "40px 60px", maxWidth: 500 }}>
-        <div onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 48, cursor: "pointer" }}>
-          <div style={{ width: 36, height: 36, background: "#E8593C", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>F</div>
-          <span style={{ fontWeight: 700, fontSize: 20 }}>FotoKash</span>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: m ? "column" : "row" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: m ? "32px 24px" : "40px 60px", maxWidth: m ? "100%" : 500 }}>
+        <div onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 36, cursor: "pointer" }}>
+          <div style={{ width: 32, height: 32, background: "#E8593C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>F</div>
+          <span style={{ fontWeight: 700, fontSize: 18 }}>FotoKash</span>
         </div>
-
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, margin: "0 0 8px" }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 26 : 32, fontWeight: 700, margin: "0 0 8px" }}>
           {mode === "login" ? "Bon retour" : "Créer un compte"}
         </h1>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", margin: "0 0 32px" }}>
-          {mode === "login" ? "Connectez-vous à votre espace photographe" : "Rejoignez FotoKash et commencez à vendre vos photos"}
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", margin: "0 0 28px" }}>
+          {mode === "login" ? "Connectez-vous à votre espace photographe" : "Rejoignez FotoKash et commencez à vendre"}
         </p>
-
         {mode === "signup" && (
-          <div style={{ marginBottom: 16 }}>
+          <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 6 }}>Nom du studio</label>
             <div style={{ position: "relative" }}>
               <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)" }}><Icon type="user" size={18}/></div>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Studio Lumière"
-                style={{ width: "100%", padding: "14px 14px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Ex: Studio Lumière" style={{ width: "100%", padding: "14px 14px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
             </div>
           </div>
         )}
-
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 6 }}>Email</label>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)" }}><Icon type="mail" size={18}/></div>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com"
-              style={{ width: "100%", padding: "14px 14px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="votre@email.com" style={{ width: "100%", padding: "14px 14px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
           </div>
         </div>
-
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <label style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 6 }}>Mot de passe</label>
           <div style={{ position: "relative" }}>
             <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "rgba(255,255,255,0.3)" }}><Icon type="lock" size={18}/></div>
-            <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Mot de passe"
-              style={{ width: "100%", padding: "14px 44px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
-            <button onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: 0 }}>
-              <Icon type={showPassword ? "eyeOff" : "eye"} size={18}/>
-            </button>
+            <input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Mot de passe" style={{ width: "100%", padding: "14px 44px 14px 44px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, color: "#fff", fontSize: 15, outline: "none", boxSizing: "border-box" }}/>
+            <button onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: 0 }}><Icon type={showPassword ? "eyeOff" : "eye"} size={18}/></button>
           </div>
         </div>
-
         {mode === "login" && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
               <input type="checkbox" style={{ accentColor: "#E8593C" }}/> Se souvenir de moi
             </label>
             <span style={{ fontSize: 13, color: "#E8593C", cursor: "pointer" }}>Mot de passe oublié ?</span>
           </div>
         )}
-
-        <button onClick={handleSubmit} disabled={loading} style={{
-          width: "100%", padding: "16px", background: loading ? "rgba(232,89,60,0.6)" : "#E8593C",
-          border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer",
-          boxShadow: "0 4px 24px rgba(232,89,60,0.3)", transition: "background 0.2s",
-        }}>
+        <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "16px", background: loading ? "rgba(232,89,60,0.6)" : "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 24px rgba(232,89,60,0.3)" }}>
           {loading ? "Connexion en cours..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
         </button>
-
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 14, color: "rgba(255,255,255,0.45)" }}>
+        <div style={{ textAlign: "center", marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.45)" }}>
           {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
-          <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: "#E8593C", cursor: "pointer", fontWeight: 500 }}>
-            {mode === "login" ? "S'inscrire" : "Se connecter"}
-          </span>
+          <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: "#E8593C", cursor: "pointer", fontWeight: 500 }}>{mode === "login" ? "S'inscrire" : "Se connecter"}</span>
         </div>
       </div>
-
-      {/* Right visual panel */}
-      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
-        <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=1000&fit=crop" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.4)" }}/>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(232,89,60,0.2), transparent)" }}/>
-        <div style={{ position: "absolute", bottom: 50, left: 50, right: 50 }}>
-          <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Playfair Display', serif", lineHeight: 1.3, marginBottom: 12 }}>Transformez chaque photo en revenu</div>
-          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Rejoignez les photographes qui utilisent FotoKash pour vendre leurs photos automatiquement via reconnaissance faciale et Mobile Money.</p>
-          <div style={{ display: "flex", gap: 28, marginTop: 24 }}>
-            {[{ val: "2,400+", label: "Photographes" }, { val: "180K", label: "Photos vendues" }, { val: "12M", label: "FCFA générés" }].map((s, i) => (
-              <div key={i}><div style={{ fontSize: 22, fontWeight: 700 }}>{s.val}</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{s.label}</div></div>
-            ))}
+      {!m && (
+        <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+          <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&h=1000&fit=crop" alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.4)" }}/>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(135deg, rgba(232,89,60,0.2), transparent)" }}/>
+          <div style={{ position: "absolute", bottom: 50, left: 50, right: 50 }}>
+            <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Playfair Display', serif", lineHeight: 1.3, marginBottom: 12 }}>Transformez chaque photo en revenu</div>
+            <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Rejoignez les photographes qui utilisent FotoKash.</p>
+            <div style={{ display: "flex", gap: 28, marginTop: 24 }}>
+              {[{ val: "2,400+", label: "Photographes" }, { val: "180K", label: "Photos vendues" }, { val: "12M", label: "FCFA générés" }].map((s, i) => (
+                <div key={i}><div style={{ fontSize: 22, fontWeight: 700 }}>{s.val}</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{s.label}</div></div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
-/* ============================================
-   CLIENT EVENT PAGE — fotokash.com/e/slug
-   ============================================ */
+/* ============ CLIENT EVENT PAGE ============ */
 function ClientEventPage({ navigate }) {
+  const m = useIsMobile();
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [view, setView] = useState("landing");
@@ -291,42 +264,17 @@ function ClientEventPage({ navigate }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [processing, setProcessing] = useState(false);
   const [purchased, setPurchased] = useState(false);
-
   const event = EVENTS[0];
   const photos = filter === "me" ? CLIENT_PHOTOS.filter(p => p.matched) : CLIENT_PHOTOS;
-
-  const totalPrice = () => {
-    const count = selectedPhotos.length;
-    if (count === 0) return 0;
-    if (count >= 11) return 1000;
-    if (count >= 6) return 500;
-    return count * 200;
-  };
-
+  const totalPrice = () => { const c = selectedPhotos.length; if (c === 0) return 0; if (c >= 11) return 1000; if (c >= 6) return 500; return c * 200; };
   const toggleSelect = (id) => setSelectedPhotos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-
-  const startScan = () => {
-    setScanning(true); setScanProgress(0);
-    const interval = setInterval(() => {
-      setScanProgress(prev => {
-        if (prev >= 100) { clearInterval(interval); setTimeout(() => { setScanning(false); setView("gallery"); setFilter("me"); }, 400); return 100; }
-        return prev + Math.random() * 15 + 5;
-      });
-    }, 200);
-  };
-
-  const handlePayment = () => {
-    if (!paymentMethod || phoneNumber.length < 8) return;
-    setProcessing(true);
-    setTimeout(() => { setProcessing(false); setPurchased(true); }, 2500);
-  };
+  const startScan = () => { setScanning(true); setScanProgress(0); const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false); setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200); };
+  const handlePayment = () => { if (!paymentMethod || phoneNumber.length < 8) return; setProcessing(true); setTimeout(() => { setProcessing(false); setPurchased(true); }, 2500); };
 
   if (scanning) return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
       <div style={{ width: 120, height: 120, borderRadius: "50%", border: "3px solid rgba(232,89,60,0.2)", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", marginBottom: 30 }}>
-        <svg width="120" height="120" style={{ position: "absolute", top: -3, left: -3, transform: "rotate(-90deg)" }}>
-          <circle cx="60" cy="60" r="57" fill="none" stroke="#E8593C" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${Math.min(scanProgress, 100) * 3.58} 358`} style={{ transition: "stroke-dasharray 0.2s" }}/>
-        </svg>
+        <svg width="120" height="120" style={{ position: "absolute", top: -3, left: -3, transform: "rotate(-90deg)" }}><circle cx="60" cy="60" r="57" fill="none" stroke="#E8593C" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${Math.min(scanProgress, 100) * 3.58} 358`} style={{ transition: "stroke-dasharray 0.2s" }}/></svg>
         <Icon type="face" size={48}/>
       </div>
       <h2 style={{ fontSize: 20, fontWeight: 600, margin: "0 0 8px" }}>Analyse en cours...</h2>
@@ -336,7 +284,7 @@ function ClientEventPage({ navigate }) {
   );
 
   if (purchased) return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40, textAlign: "center" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
       <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(74,222,128,0.15)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24, color: "#4ADE80" }}><Icon type="check" size={36}/></div>
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 8px" }}>Paiement confirmé !</h2>
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px" }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""} — {totalPrice().toLocaleString()} FCFA</p>
@@ -351,19 +299,17 @@ function ClientEventPage({ navigate }) {
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Paiement</h2>
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 24px" }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""}</p>
       <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: 16, marginBottom: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "rgba(255,255,255,0.6)" }}>
-          <span>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""} (à 200 F)</span><span>{(selectedPhotos.length * 200).toLocaleString()} F</span>
-        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "rgba(255,255,255,0.6)" }}><span>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""} (à 200 F)</span><span>{(selectedPhotos.length * 200).toLocaleString()} F</span></div>
         {totalPrice() < selectedPhotos.length * 200 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "#4ADE80" }}><span>Réduction pack</span><span>-{(selectedPhotos.length * 200 - totalPrice()).toLocaleString()} F</span></div>}
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 700 }}><span>Total</span><span style={{ color: "#E8593C" }}>{totalPrice().toLocaleString()} FCFA</span></div>
       </div>
       <h3 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>Moyen de paiement</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
-        {[{ id: "orange", name: "Orange Money", color: "#FF6B00", icon: "OM" }, { id: "mtn", name: "MTN MoMo", color: "#FFCC00", tc: "#000", icon: "MM" }, { id: "wave", name: "Wave", color: "#1DC3E8", icon: "W" }].map(m => (
-          <button key={m.id} onClick={() => setPaymentMethod(m.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: paymentMethod === m.id ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.05)", border: paymentMethod === m.id ? "1.5px solid #E8593C" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "#fff", width: "100%", textAlign: "left" }}>
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: m.tc || "#fff" }}>{m.icon}</div>
-            <span style={{ fontSize: 15, fontWeight: 500 }}>{m.name}</span>
-            {paymentMethod === m.id && <div style={{ marginLeft: "auto", color: "#E8593C" }}><Icon type="check" size={16}/></div>}
+        {[{ id: "orange", name: "Orange Money", color: "#FF6B00", icon: "OM" }, { id: "mtn", name: "MTN MoMo", color: "#FFCC00", tc: "#000", icon: "MM" }, { id: "wave", name: "Wave", color: "#1DC3E8", icon: "W" }].map(pm => (
+          <button key={pm.id} onClick={() => setPaymentMethod(pm.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: paymentMethod === pm.id ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.05)", border: paymentMethod === pm.id ? "1.5px solid #E8593C" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "#fff", width: "100%", textAlign: "left" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: pm.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: pm.tc || "#fff" }}>{pm.icon}</div>
+            <span style={{ fontSize: 15, fontWeight: 500 }}>{pm.name}</span>
+            {paymentMethod === pm.id && <div style={{ marginLeft: "auto", color: "#E8593C" }}><Icon type="check" size={16}/></div>}
           </button>
         ))}
       </div>
@@ -375,79 +321,78 @@ function ClientEventPage({ navigate }) {
         </div>
       </>}
       <button onClick={handlePayment} disabled={!paymentMethod || phoneNumber.length < 8 || processing} style={{ width: "100%", padding: "16px", background: (!paymentMethod || phoneNumber.length < 8) ? "rgba(255,255,255,0.1)" : "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", opacity: (!paymentMethod || phoneNumber.length < 8) ? 0.5 : 1 }}>
-        {processing ? "Traitement en cours..." : `Payer ${totalPrice().toLocaleString()} FCFA`}
+        {processing ? "Traitement..." : `Payer ${totalPrice().toLocaleString()} FCFA`}
       </button>
     </div>
   );
 
   if (view === "gallery") return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
-      <div style={{ padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <button onClick={() => { setView("landing"); setFilter("all"); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", cursor: "pointer", padding: 0 }}><Icon type="back" size={20}/></button>
-        <span style={{ fontSize: 15, fontWeight: 600 }}>{event.name}</span>
+        <span style={{ fontSize: 14, fontWeight: 600 }}>{event.name}</span>
         <div style={{ width: 20 }}/>
       </div>
-      <div style={{ padding: "12px 20px", display: "flex", gap: 8 }}>
+      <div style={{ padding: "10px 16px", display: "flex", gap: 8 }}>
         {[{ key: "all", label: `Toutes (${CLIENT_PHOTOS.length})` }, { key: "me", label: `Mes photos (${CLIENT_PHOTOS.filter(p => p.matched).length})` }].map(f => (
-          <button key={f.key} onClick={() => setFilter(f.key)} style={{ padding: "8px 16px", borderRadius: 20, fontSize: 13, fontWeight: 500, cursor: "pointer", border: "none", background: filter === f.key ? "#E8593C" : "rgba(255,255,255,0.08)", color: filter === f.key ? "#fff" : "rgba(255,255,255,0.6)" }}>{f.label}</button>
+          <button key={f.key} onClick={() => setFilter(f.key)} style={{ padding: "7px 14px", borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: "pointer", border: "none", background: filter === f.key ? "#E8593C" : "rgba(255,255,255,0.08)", color: filter === f.key ? "#fff" : "rgba(255,255,255,0.6)" }}>{f.label}</button>
         ))}
       </div>
-      {filter === "me" && <div style={{ padding: "0 20px 12px", display: "flex", alignItems: "center", gap: 8 }}><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#4ADE80" }}/><span style={{ fontSize: 13, color: "#4ADE80" }}>{CLIENT_PHOTOS.filter(p => p.matched).length} photos de vous trouvées</span></div>}
-      <div style={{ padding: "0 12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+      {filter === "me" && <div style={{ padding: "0 16px 10px", display: "flex", alignItems: "center", gap: 6 }}><div style={{ width: 7, height: 7, borderRadius: "50%", background: "#4ADE80" }}/><span style={{ fontSize: 12, color: "#4ADE80" }}>{CLIENT_PHOTOS.filter(p => p.matched).length} photos de vous</span></div>}
+      <div style={{ padding: "0 8px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5 }}>
         {photos.map(photo => {
           const selected = selectedPhotos.includes(photo.id);
           return (
             <div key={photo.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "4/5" }}>
               <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
               <WatermarkOverlay/>
-              {photo.matched && filter === "all" && <div style={{ position: "absolute", top: 8, left: 8, background: "rgba(74,222,128,0.2)", backdropFilter: "blur(8px)", borderRadius: 6, padding: "3px 8px", fontSize: 10, color: "#4ADE80", fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}><div style={{ width: 5, height: 5, borderRadius: "50%", background: "#4ADE80" }}/> Vous</div>}
-              <button onClick={() => toggleSelect(photo.id)} style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: 8, background: selected ? "#E8593C" : "rgba(0,0,0,0.4)", border: selected ? "none" : "1.5px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
-                {selected && <Icon type="check" size={14}/>}
+              {photo.matched && filter === "all" && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(74,222,128,0.2)", backdropFilter: "blur(8px)", borderRadius: 6, padding: "2px 7px", fontSize: 10, color: "#4ADE80", fontWeight: 600 }}>Vous</div>}
+              <button onClick={() => toggleSelect(photo.id)} style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: 7, background: selected ? "#E8593C" : "rgba(0,0,0,0.4)", border: selected ? "none" : "1.5px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
+                {selected && <Icon type="check" size={12}/>}
               </button>
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 10px 8px", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>{photo.price} FCFA</span>
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 8px 6px", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
+                <span style={{ fontSize: 11, fontWeight: 600 }}>{photo.price} F</span>
               </div>
             </div>
           );
         })}
       </div>
       {selectedPhotos.length > 0 && (
-        <div style={{ position: "sticky", bottom: 0, padding: "14px 20px", background: "rgba(10,10,10,0.92)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div><div style={{ fontSize: 14, fontWeight: 600 }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""}</div><div style={{ fontSize: 18, fontWeight: 700, color: "#E8593C" }}>{totalPrice().toLocaleString()} FCFA</div></div>
-          <button onClick={() => setShowPayment(true)} style={{ padding: "12px 28px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 8, boxShadow: "0 4px 20px rgba(232,89,60,0.3)" }}><Icon type="cart" size={18}/> Acheter</button>
+        <div style={{ position: "sticky", bottom: 0, padding: "12px 16px", background: "rgba(10,10,10,0.92)", backdropFilter: "blur(16px)", borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div><div style={{ fontSize: 13, fontWeight: 600 }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""}</div><div style={{ fontSize: 17, fontWeight: 700, color: "#E8593C" }}>{totalPrice().toLocaleString()} F</div></div>
+          <button onClick={() => setShowPayment(true)} style={{ padding: "11px 24px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icon type="cart" size={16}/> Acheter</button>
         </div>
       )}
     </div>
   );
 
-  // Event landing
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", position: "relative" }}>
-      <div style={{ position: "relative", height: 400, overflow: "hidden" }}>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
+      <div style={{ position: "relative", height: m ? 340 : 400, overflow: "hidden" }}>
         <img src={event.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.5)" }}/>
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 30%, #0a0a0a)" }}/>
-        <div style={{ position: "absolute", top: 16, left: 16, right: 16, display: "flex", justifyContent: "space-between" }}>
-          <button onClick={() => navigate("landing")} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: "8px 12px", color: "#fff", cursor: "pointer", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><Icon type="back" size={14}/> Accueil</button>
-          <button style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: "8px 12px", color: "#fff", cursor: "pointer", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", gap: 6, fontSize: 13 }}><Icon type="qr" size={14}/> Scanner QR</button>
+        <div style={{ position: "absolute", top: 14, left: 14, right: 14, display: "flex", justifyContent: "space-between" }}>
+          <button onClick={() => navigate("landing")} style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: "7px 12px", color: "#fff", cursor: "pointer", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", gap: 5, fontSize: 12 }}><Icon type="back" size={14}/> Accueil</button>
+          <button style={{ background: "rgba(255,255,255,0.15)", border: "none", borderRadius: 10, padding: "7px 12px", color: "#fff", cursor: "pointer", backdropFilter: "blur(10px)", display: "flex", alignItems: "center", gap: 5, fontSize: 12 }}><Icon type="qr" size={14}/> QR</button>
         </div>
-        <div style={{ position: "absolute", bottom: 30, left: 20, right: 20 }}>
-          <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 3, color: "#E8593C", fontWeight: 600, marginBottom: 8 }}>{event.date}</div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 700, lineHeight: 1.15, margin: "0 0 8px" }}>{event.name}</h1>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", margin: 0 }}>Par Studio Lumière — {event.photos} photos</p>
+        <div style={{ position: "absolute", bottom: 24, left: 20, right: 20 }}>
+          <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 3, color: "#E8593C", fontWeight: 600, marginBottom: 6 }}>{event.date}</div>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 24 : 30, fontWeight: 700, lineHeight: 1.15, margin: "0 0 6px" }}>{event.name}</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", margin: 0 }}>Par Studio Lumière — {event.photos} photos</p>
         </div>
       </div>
-      <div style={{ padding: "24px 20px" }}>
-        <button onClick={startScan} style={{ width: "100%", padding: "16px 20px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}><Icon type="camera" size={20}/> Trouver mes photos par selfie</button>
-        <button onClick={() => setView("gallery")} style={{ width: "100%", padding: "14px 20px", marginTop: 12, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 500, cursor: "pointer" }}>Parcourir toute la galerie</button>
-        <div style={{ marginTop: 28 }}>
-          <h3 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 2, margin: "0 0 14px" }}>Tarifs</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+      <div style={{ padding: "20px 16px" }}>
+        <button onClick={startScan} style={{ width: "100%", padding: "15px 20px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}><Icon type="camera" size={20}/> Trouver mes photos par selfie</button>
+        <button onClick={() => setView("gallery")} style={{ width: "100%", padding: "13px 20px", marginTop: 10, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>Parcourir toute la galerie</button>
+        <div style={{ marginTop: 24 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: 2, margin: "0 0 12px" }}>Tarifs</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
             {PACKS.map(pack => (
-              <div key={pack.count} style={{ background: pack.popular ? "rgba(232,89,60,0.12)" : "rgba(255,255,255,0.05)", border: pack.popular ? "1px solid rgba(232,89,60,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "14px 12px", position: "relative" }}>
-                {pack.popular && <span style={{ position: "absolute", top: -8, right: 8, background: "#E8593C", color: "#fff", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 6 }}>Top</span>}
-                <div style={{ fontSize: 20, fontWeight: 700 }}>{pack.price} <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.5)" }}>F</span></div>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{pack.label}</div>
-                {pack.savings && <div style={{ fontSize: 11, color: "#4ADE80", fontWeight: 600, marginTop: 4 }}>-{pack.savings}</div>}
+              <div key={pack.count} style={{ background: pack.popular ? "rgba(232,89,60,0.12)" : "rgba(255,255,255,0.05)", border: pack.popular ? "1px solid rgba(232,89,60,0.35)" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 10px", position: "relative" }}>
+                {pack.popular && <span style={{ position: "absolute", top: -7, right: 6, background: "#E8593C", color: "#fff", fontSize: 9, fontWeight: 600, padding: "2px 6px", borderRadius: 5 }}>Top</span>}
+                <div style={{ fontSize: 18, fontWeight: 700 }}>{pack.price} <span style={{ fontSize: 10, fontWeight: 400, color: "rgba(255,255,255,0.5)" }}>F</span></div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>{pack.label}</div>
+                {pack.savings && <div style={{ fontSize: 10, color: "#4ADE80", fontWeight: 600, marginTop: 3 }}>-{pack.savings}</div>}
               </div>
             ))}
           </div>
@@ -457,11 +402,11 @@ function ClientEventPage({ navigate }) {
   );
 }
 
-/* ============================================
-   DASHBOARD — fotokash.com/dashboard
-   ============================================ */
+/* ============ DASHBOARD ============ */
 function DashboardPage({ navigate }) {
+  const m = useIsMobile();
   const [tab, setTab] = useState("dashboard");
+  const [menuOpen, setMenuOpen] = useState(false);
   const [uploadDrag, setUploadDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -469,176 +414,164 @@ function DashboardPage({ navigate }) {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showNewEvent, setShowNewEvent] = useState(false);
   const fileRef = useRef();
-
   const totalSold = EVENTS.reduce((s, e) => s + e.sold, 0);
   const totalPhotos = EVENTS.reduce((s, e) => s + e.photos, 0);
-
-  const simulateUpload = () => {
-    setUploading(true); setUploadProgress(0);
-    const interval = setInterval(() => {
-      setUploadProgress(prev => { if (prev >= 100) { clearInterval(interval); setTimeout(() => setUploading(false), 600); return 100; } return prev + Math.random() * 8 + 3; });
-    }, 150);
-  };
-
+  const simulateUpload = () => { setUploading(true); setUploadProgress(0); const iv = setInterval(() => { setUploadProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => setUploading(false), 600); return 100; } return prev + Math.random() * 8 + 3; }); }, 150); };
   const filteredPhotos = photoFilter === "all" ? DASHBOARD_PHOTOS : DASHBOARD_PHOTOS.filter(p => p.event === photoFilter);
   const navItems = [{ key: "dashboard", label: "Dashboard", icon: "dashboard" }, { key: "photos", label: "Photos", icon: "photos" }, { key: "events", label: "Événements", icon: "events" }];
 
   return (
-    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex" }}>
-      {/* Sidebar */}
-      <div style={{ width: 220, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "24px 0", flexShrink: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "0 20px", marginBottom: 36, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, background: "#E8593C", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>F</div>
-          <div><div style={{ fontWeight: 700, fontSize: 16 }}>FotoKash</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Studio Lumière</div></div>
+    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: m ? "column" : "row" }}>
+      {/* Mobile header */}
+      {m && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 30, height: 30, background: "#E8593C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 13 }}>F</div>
+            <span style={{ fontWeight: 700, fontSize: 16 }}>FotoKash</span>
+          </div>
+          <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 4 }}><Icon type={menuOpen ? "close" : "menu"} size={24}/></button>
         </div>
-        {navItems.map(item => (
-          <button key={item.key} onClick={() => setTab(item.key)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderLeft: tab === item.key ? "3px solid #E8593C" : "3px solid transparent", color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: tab === item.key ? 600 : 400, width: "100%", textAlign: "left" }}>
-            <Icon type={item.icon}/> {item.label}
-          </button>
-        ))}
-        <div style={{ marginTop: 16, padding: "0 20px" }}>
-          <button onClick={() => navigate("event")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", width: "100%" }}>
-            <Icon type="eye" size={16}/> Voir côté client
-          </button>
+      )}
+      {/* Mobile menu overlay */}
+      {m && menuOpen && (
+        <div style={{ background: "rgba(0,0,0,0.95)", padding: "20px", display: "flex", flexDirection: "column", gap: 6 }}>
+          {navItems.map(item => (
+            <button key={item.key} onClick={() => { setTab(item.key); setMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderRadius: 10, color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: tab === item.key ? 600 : 400, width: "100%" }}>
+              <Icon type={item.icon}/> {item.label}
+            </button>
+          ))}
+          <button onClick={() => navigate("event")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 15, cursor: "pointer", width: "100%" }}><Icon type="eye" size={18}/> Voir côté client</button>
+          <button onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 15, cursor: "pointer", width: "100%" }}><Icon type="logout" size={18}/> Déconnexion</button>
         </div>
-        <div style={{ marginTop: "auto", padding: "0 20px" }}>
-          <button onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", width: "100%" }}>
-            <Icon type="logout" size={16}/> Déconnexion
-          </button>
+      )}
+      {/* Desktop sidebar */}
+      {!m && (
+        <div style={{ width: 220, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "24px 0", flexShrink: 0, display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "0 20px", marginBottom: 36, display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 36, height: 36, background: "#E8593C", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>F</div>
+            <div><div style={{ fontWeight: 700, fontSize: 16 }}>FotoKash</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Studio Lumière</div></div>
+          </div>
+          {navItems.map(item => (
+            <button key={item.key} onClick={() => setTab(item.key)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderLeft: tab === item.key ? "3px solid #E8593C" : "3px solid transparent", color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: tab === item.key ? 600 : 400, width: "100%", textAlign: "left" }}>
+              <Icon type={item.icon}/> {item.label}
+            </button>
+          ))}
+          <div style={{ marginTop: 16, padding: "0 20px" }}><button onClick={() => navigate("event")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", width: "100%" }}><Icon type="eye" size={16}/> Voir côté client</button></div>
+          <div style={{ marginTop: "auto", padding: "0 20px" }}><button onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", width: "100%" }}><Icon type="logout" size={16}/> Déconnexion</button></div>
         </div>
-      </div>
-
-      {/* Main */}
-      <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto", maxHeight: "100vh" }}>
-
-        {/* URL bar simulation */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24, padding: "8px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-          <Icon type="lock" size={14}/>
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>
-            fotokash.com/{tab === "dashboard" ? "dashboard" : `dashboard/${tab}`}
-          </span>
-          <span style={{ marginLeft: "auto", fontSize: 11, padding: "2px 8px", borderRadius: 6, background: "rgba(74,222,128,0.15)", color: "#4ADE80" }}>Espace protégé</span>
-        </div>
-
-        {/* DASHBOARD */}
+      )}
+      {/* Main content */}
+      <div style={{ flex: 1, padding: m ? "20px 16px" : "28px 32px", overflowY: "auto", maxHeight: "100vh" }}>
         {tab === "dashboard" && <>
-          <h1 style={{ fontSize: 26, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Bonjour, Studio Lumière</h1>
-          <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", margin: "0 0 24px" }}>Performances du mois de mars 2026</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 24 }}>
+          <h1 style={{ fontSize: m ? 20 : 26, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Bonjour, Studio Lumière</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>Performances du mois</p>
+          <div style={{ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
             {[
-              { label: "Revenus du mois", value: "127 000 F", accent: true, sub: "+144% vs fév." },
-              { label: "Photos vendues", value: totalSold, sub: `sur ${totalPhotos}` },
-              { label: "Taux de conversion", value: `${Math.round((totalSold / totalPhotos) * 100)}%`, sub: "vues → achetées" },
-              { label: "Événements actifs", value: EVENTS.filter(e => e.status === "live").length, sub: `${EVENTS.length} total` },
+              { label: "Revenus", value: "127K F", accent: true, sub: "+144%" },
+              { label: "Vendues", value: totalSold, sub: `sur ${totalPhotos}` },
+              { label: "Conversion", value: `${Math.round((totalSold / totalPhotos) * 100)}%`, sub: "vues→achat" },
+              { label: "Événements", value: EVENTS.filter(e => e.status === "live").length, sub: `${EVENTS.length} total` },
             ].map((s, i) => (
-              <div key={i} style={{ background: s.accent ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.04)", border: s.accent ? "1px solid rgba(232,89,60,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginBottom: 8 }}>{s.label}</div>
-                <div style={{ fontSize: 26, fontWeight: 700, color: s.accent ? "#E8593C" : "#fff" }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{s.sub}</div>
+              <div key={i} style={{ background: s.accent ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.04)", border: s.accent ? "1px solid rgba(232,89,60,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: m ? "14px" : "18px 20px" }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{s.label}</div>
+                <div style={{ fontSize: m ? 20 : 26, fontWeight: 700, color: s.accent ? "#E8593C" : "#fff" }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{s.sub}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 24px" }}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px" }}>Revenus (6 mois)</h3>
+          <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: 14 }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>Revenus (6 mois)</h3>
               <MiniChart data={REVENUE_DATA}/>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "20px 24px" }}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px" }}>Ventes récentes</h3>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>Ventes récentes</h3>
               {[
                 { name: "Moussa K.", photos: 5, amount: 1000, method: "Wave", time: "12 min" },
                 { name: "Aminata D.", photos: 3, amount: 600, method: "Orange", time: "34 min" },
-                { name: "Jean-Pierre M.", photos: 1, amount: 200, method: "MTN", time: "1h" },
-                { name: "Fatou S.", photos: 6, amount: 500, method: "Wave", time: "2h" },
+                { name: "Jean-Pierre", photos: 1, amount: 200, method: "MTN", time: "1h" },
               ].map((s, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < 3 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 500 }}>{s.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{s.photos} photo{s.photos > 1 ? "s" : ""} — {s.method} — {s.time}</div></div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#4ADE80" }}>+{s.amount} F</div>
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                  <div><div style={{ fontSize: 13, fontWeight: 500 }}>{s.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{s.photos}p — {s.method} — {s.time}</div></div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#4ADE80" }}>+{s.amount}F</div>
                 </div>
               ))}
             </div>
           </div>
         </>}
-
-        {/* PHOTOS */}
         {tab === "photos" && <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Mes photos</h1>
-            <button onClick={() => fileRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 24px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}><Icon type="upload"/> Uploader</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+            <h1 style={{ fontSize: m ? 20 : 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Mes photos</h1>
+            <button onClick={() => fileRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}><Icon type="upload" size={16}/> Uploader</button>
             <input ref={fileRef} type="file" multiple accept="image/*" style={{ display: "none" }} onChange={simulateUpload}/>
           </div>
           <div onDragOver={e => { e.preventDefault(); setUploadDrag(true); }} onDragLeave={() => setUploadDrag(false)} onDrop={e => { e.preventDefault(); setUploadDrag(false); simulateUpload(); }}
-            style={{ border: `2px dashed ${uploadDrag ? "#E8593C" : "rgba(255,255,255,0.1)"}`, borderRadius: 16, padding: uploading ? "20px" : "32px", textAlign: "center", marginBottom: 20, background: uploadDrag ? "rgba(232,89,60,0.06)" : "rgba(255,255,255,0.02)", cursor: "pointer" }}
+            style={{ border: `2px dashed ${uploadDrag ? "#E8593C" : "rgba(255,255,255,0.1)"}`, borderRadius: 14, padding: uploading ? "16px" : "28px", textAlign: "center", marginBottom: 16, background: uploadDrag ? "rgba(232,89,60,0.06)" : "rgba(255,255,255,0.02)", cursor: "pointer" }}
             onClick={() => !uploading && fileRef.current?.click()}>
             {uploading ? <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 8 }}><span>Upload... 24 photos</span><span style={{ color: "#E8593C", fontWeight: 600 }}>{Math.min(Math.round(uploadProgress), 100)}%</span></div>
-              <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}><div style={{ height: "100%", width: `${Math.min(uploadProgress, 100)}%`, background: "#E8593C", borderRadius: 3, transition: "width 0.15s" }}/></div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 8 }}>Compression + détection faciale + QR...</div>
-            </div> : <><div style={{ color: "rgba(255,255,255,0.3)" }}><Icon type="upload" size={24}/></div><div style={{ fontSize: 15, fontWeight: 500, marginTop: 10 }}>Glissez vos photos ici</div><div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 4 }}>JPG, PNG, RAW</div></>}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}><span>Upload...</span><span style={{ color: "#E8593C", fontWeight: 600 }}>{Math.min(Math.round(uploadProgress), 100)}%</span></div>
+              <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}><div style={{ height: "100%", width: `${Math.min(uploadProgress, 100)}%`, background: "#E8593C", borderRadius: 3, transition: "width 0.15s" }}/></div>
+            </div> : <><div style={{ color: "rgba(255,255,255,0.3)" }}><Icon type="upload" size={22}/></div><div style={{ fontSize: 14, fontWeight: 500, marginTop: 8 }}>Glissez vos photos ici</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>JPG, PNG, RAW</div></>}
           </div>
-          <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-            <button onClick={() => setPhotoFilter("all")} style={{ padding: "7px 16px", borderRadius: 20, fontSize: 13, border: "none", cursor: "pointer", background: photoFilter === "all" ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === "all" ? "#fff" : "rgba(255,255,255,0.5)" }}>Toutes ({DASHBOARD_PHOTOS.length})</button>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
+            <button onClick={() => setPhotoFilter("all")} style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, border: "none", cursor: "pointer", background: photoFilter === "all" ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === "all" ? "#fff" : "rgba(255,255,255,0.5)" }}>Toutes ({DASHBOARD_PHOTOS.length})</button>
             {[...new Set(DASHBOARD_PHOTOS.map(p => p.event))].map(ev => (
-              <button key={ev} onClick={() => setPhotoFilter(ev)} style={{ padding: "7px 16px", borderRadius: 20, fontSize: 13, border: "none", cursor: "pointer", background: photoFilter === ev ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === ev ? "#fff" : "rgba(255,255,255,0.5)" }}>{ev.split(" ")[0]}</button>
+              <button key={ev} onClick={() => setPhotoFilter(ev)} style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, border: "none", cursor: "pointer", background: photoFilter === ev ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === ev ? "#fff" : "rgba(255,255,255,0.5)" }}>{ev.split(" ")[0]}</button>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: m ? "repeat(3, 1fr)" : "repeat(auto-fill, minmax(130px, 1fr))", gap: 6 }}>
             {filteredPhotos.map(p => (
-              <div key={p.id} style={{ position: "relative", borderRadius: 10, overflow: "hidden", aspectRatio: "1" }}>
+              <div key={p.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1" }}>
                 <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
                 <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 50%, rgba(0,0,0,0.6))" }}/>
-                <div style={{ position: "absolute", top: 6, left: 6, display: "flex", gap: 4 }}>
-                  {p.sold && <span style={{ background: "rgba(74,222,128,0.2)", borderRadius: 5, padding: "2px 7px", fontSize: 10, color: "#4ADE80", fontWeight: 600 }}>Vendue</span>}
-                  <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 5, padding: "2px 7px", fontSize: 10 }}>{p.faces} vis.</span>
+                <div style={{ position: "absolute", top: 4, left: 4, display: "flex", gap: 3 }}>
+                  {p.sold && <span style={{ background: "rgba(74,222,128,0.2)", borderRadius: 4, padding: "1px 5px", fontSize: 9, color: "#4ADE80", fontWeight: 600 }}>Vendue</span>}
+                  <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 4, padding: "1px 5px", fontSize: 9 }}>{p.faces}v.</span>
                 </div>
               </div>
             ))}
           </div>
         </>}
-
-        {/* EVENTS */}
         {tab === "events" && <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Événements</h1>
-            <button onClick={() => setShowNewEvent(!showNewEvent)} style={{ padding: "12px 24px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>+ Nouvel événement</button>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+            <h1 style={{ fontSize: m ? 20 : 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Événements</h1>
+            <button onClick={() => setShowNewEvent(!showNewEvent)} style={{ padding: "10px 18px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Nouveau</button>
           </div>
           {showNewEvent && (
-            <div style={{ background: "rgba(232,89,60,0.06)", border: "1px solid rgba(232,89,60,0.2)", borderRadius: 14, padding: 20, marginBottom: 20 }}>
-              <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
-                <input placeholder="Nom de l'événement" style={{ flex: 2, padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 14, outline: "none" }}/>
-                <input type="date" style={{ flex: 1, padding: "10px 14px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 14, outline: "none" }}/>
+            <div style={{ background: "rgba(232,89,60,0.06)", border: "1px solid rgba(232,89,60,0.2)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <div style={{ display: "flex", flexDirection: m ? "column" : "row", gap: 10, marginBottom: 12 }}>
+                <input placeholder="Nom de l'événement" style={{ flex: 2, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
+                <input type="date" style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
               </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={() => setShowNewEvent(false)} style={{ padding: "10px 20px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, cursor: "pointer" }}>Annuler</button>
-                <button onClick={() => setShowNewEvent(false)} style={{ padding: "10px 20px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Créer</button>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setShowNewEvent(false)} style={{ padding: "9px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12, cursor: "pointer" }}>Annuler</button>
+                <button onClick={() => setShowNewEvent(false)} style={{ padding: "9px 16px", background: "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Créer</button>
               </div>
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: 12 }}>
             {EVENTS.map(ev => (
               <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent === ev.id ? null : ev.id)} style={{ background: "rgba(255,255,255,0.04)", border: selectedEvent === ev.id ? "1px solid rgba(232,89,60,0.4)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, overflow: "hidden", cursor: "pointer" }}>
-                <div style={{ position: "relative", height: 130, overflow: "hidden" }}>
+                <div style={{ position: "relative", height: m ? 110 : 130, overflow: "hidden" }}>
                   <img src={ev.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.6)" }}/>
                   <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.7))" }}/>
-                  <span style={{ position: "absolute", top: 10, right: 10, padding: "4px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600, background: ev.status === "live" ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.15)", color: ev.status === "live" ? "#4ADE80" : "rgba(255,255,255,0.6)" }}>{ev.status === "live" ? "En cours" : "Terminé"}</span>
-                  <div style={{ position: "absolute", bottom: 10, left: 14 }}><div style={{ fontSize: 15, fontWeight: 700 }}>{ev.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{ev.date}</div></div>
+                  <span style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, background: ev.status === "live" ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.15)", color: ev.status === "live" ? "#4ADE80" : "rgba(255,255,255,0.6)" }}>{ev.status === "live" ? "En cours" : "Terminé"}</span>
+                  <div style={{ position: "absolute", bottom: 10, left: 12 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{ev.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{ev.date}</div></div>
                 </div>
-                <div style={{ padding: 16 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
-                    <div><div style={{ fontSize: 18, fontWeight: 700 }}>{ev.photos}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Photos</div></div>
-                    <div><div style={{ fontSize: 18, fontWeight: 700 }}>{ev.sold}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Vendues</div></div>
-                    <div><div style={{ fontSize: 18, fontWeight: 700, color: "#4ADE80" }}>{ev.revenue.toLocaleString()}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>FCFA</div></div>
+                <div style={{ padding: 14 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, textAlign: "center" }}>
+                    <div><div style={{ fontSize: 16, fontWeight: 700 }}>{ev.photos}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Photos</div></div>
+                    <div><div style={{ fontSize: 16, fontWeight: 700 }}>{ev.sold}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Vendues</div></div>
+                    <div><div style={{ fontSize: 16, fontWeight: 700, color: "#4ADE80" }}>{ev.revenue.toLocaleString()}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>FCFA</div></div>
                   </div>
                   {selectedEvent === ev.id && (
-                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button style={{ flex: 1, padding: "9px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12, cursor: "pointer" }}>Copier lien</button>
-                        <button style={{ flex: 1, padding: "9px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12, cursor: "pointer" }}>QR code</button>
-                        <button onClick={e => { e.stopPropagation(); setTab("photos"); setPhotoFilter(ev.name); }} style={{ flex: 1, padding: "9px 0", background: "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Photos</button>
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 11, cursor: "pointer" }}>Copier lien</button>
+                        <button style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 11, cursor: "pointer" }}>QR code</button>
+                        <button onClick={e => { e.stopPropagation(); setTab("photos"); setPhotoFilter(ev.name); }} style={{ flex: 1, padding: "8px 0", background: "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Photos</button>
                       </div>
-                      <div style={{ marginTop: 10, fontSize: 12, color: "rgba(255,255,255,0.3)" }}>
-                        Lien : <span style={{ fontFamily: "monospace", color: "#E8593C" }}>fotokash.com/e/{ev.slug}</span>
-                      </div>
+                      <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Lien : <span style={{ fontFamily: "monospace", color: "#E8593C" }}>fotokash.com/e/{ev.slug}</span></div>
                     </div>
                   )}
                 </div>
@@ -651,12 +584,9 @@ function DashboardPage({ navigate }) {
   );
 }
 
-/* ============================================
-   APP ROUTER — point d'entrée principal
-   ============================================ */
+/* ============ APP ROUTER ============ */
 export default function FotoKashApp() {
   const [page, setPage] = useState("landing");
-
   return (
     <div>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
