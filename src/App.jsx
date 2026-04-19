@@ -264,19 +264,65 @@ function ClientEventPage({ navigate }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [processing, setProcessing] = useState(false);
   const [purchased, setPurchased] = useState(false);
-  const event = EVENTS[0];
+  const [showSelfieChoice, setShowSelfieChoice] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const selfieRef = useRef();
+  const videoRef = useRef();
+  const event = EVENTS[0];
   const photos = filter === "me" ? CLIENT_PHOTOS.filter(p => p.matched) : CLIENT_PHOTOS;
   const totalPrice = () => { const c = selectedPhotos.length; if (c === 0) return 0; if (c >= 11) return 1000; if (c >= 6) return 500; return c * 200; };
   const toggleSelect = (id) => setSelectedPhotos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const startScan = () => { selfieRef.current?.click(); };
-  const handleSelfieCapture = (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  setScanning(true); setScanProgress(0);
-  const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false);      setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200);
-};
+  const launchScan = () => { setScanning(true); setScanProgress(0); const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false); setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200); };
+  const startScan = () => {
+    if (/Mobi|Android/i.test(navigator.userAgent)) {
+      selfieRef.current?.click();
+    } else {
+      setShowSelfieChoice(true);
+    }
+  };
+  const handleSelfieCapture = (e) => { const file = e.target.files?.[0]; if (!file) return; setShowSelfieChoice(false); launchScan(); };
+  const openWebcam = () => {
+    setShowSelfieChoice(false);
+    setShowCamera(true);
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 480 } })
+      .then(stream => { if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); } })
+      .catch(() => { setShowCamera(false); selfieRef.current?.click(); });
+  };
+  const captureFromWebcam = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.srcObject?.getTracks().forEach(t => t.stop());
+    setShowCamera(false);
+    launchScan();
+  };
+  const closeCamera = () => { videoRef.current?.srcObject?.getTracks().forEach(t => t.stop()); setShowCamera(false); };
   const handlePayment = () => { if (!paymentMethod || phoneNumber.length < 8) return; setProcessing(true); setTimeout(() => { setProcessing(false); setPurchased(true); }, 2500); };
+
+  if (showSelfieChoice) return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "32px 28px", width: "100%", maxWidth: 380, textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(232,89,60,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: "#E8593C" }}><Icon type="face" size={32}/></div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>Trouver mes photos</h2>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px", lineHeight: 1.5 }}>Choisissez comment vous identifier pour retrouver vos photos dans cet événement</p>
+        <button onClick={openWebcam} style={{ width: "100%", padding: "16px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12, boxShadow: "0 4px 20px rgba(232,89,60,0.3)" }}><Icon type="camera" size={20}/> Prendre un selfie</button>
+        <button onClick={() => { setShowSelfieChoice(false); selfieRef.current?.click(); }} style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><Icon type="upload" size={20}/> Joindre une photo</button>
+        <button onClick={() => setShowSelfieChoice(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 18, cursor: "pointer" }}>Annuler</button>
+      </div>
+      <input ref={selfieRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleSelfieCapture}/>
+    </div>
+  );
+
+  if (showCamera) return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 600, margin: "0 0 6px" }}>Prenez votre selfie</h2>
+      <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", margin: "0 0 20px" }}>Centrez votre visage dans le cercle</p>
+      <div style={{ position: "relative", width: 280, height: 280, borderRadius: "50%", overflow: "hidden", border: "3px solid #E8593C", marginBottom: 24 }}>
+        <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scaleX(-1)" }}/>
+      </div>
+      <button onClick={captureFromWebcam} style={{ padding: "16px 48px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 24px rgba(232,89,60,0.35)", display: "flex", alignItems: "center", gap: 8 }}><Icon type="camera" size={20}/> Capturer</button>
+      <button onClick={closeCamera} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 14, marginTop: 16, cursor: "pointer" }}>Annuler</button>
+    </div>
+  );
 
   if (scanning) return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 40 }}>
@@ -389,7 +435,7 @@ function ClientEventPage({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "20px 16px" }}>
-	<input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: "none" }} onChange={handleSelfieCapture}/>
+        <input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: "none" }} onChange={handleSelfieCapture}/>
         <button onClick={startScan} style={{ width: "100%", padding: "15px 20px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}><Icon type="camera" size={20}/> Trouver mes photos par selfie</button>
         <button onClick={() => setView("gallery")} style={{ width: "100%", padding: "13px 20px", marginTop: 10, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>Parcourir toute la galerie</button>
         <div style={{ marginTop: 24 }}>
