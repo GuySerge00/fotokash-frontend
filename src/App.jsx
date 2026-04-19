@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 
 /* ============================================
-   FOTOKASH — Application responsive
+   FOTOKASH — Application connectée au back-end
    ============================================ */
+
+const API = "https://fotokash-backend-production.up.railway.app/api";
 
 // Hook responsive
 function useIsMobile() {
@@ -15,39 +17,21 @@ function useIsMobile() {
   return isMobile;
 }
 
-const EVENTS = [
-  { id: 1, slug: "mariage-sarah-konan", name: "Mariage Sarah & Konan", date: "23 mars 2026", photos: 247, sold: 89, revenue: 34500, status: "live", cover: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" },
-  { id: 2, slug: "bapteme-petit-david", name: "Baptême Petit David", date: "15 mars 2026", photos: 132, sold: 45, revenue: 18000, status: "live", cover: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=600&h=400&fit=crop" },
-  { id: 3, slug: "anniversaire-aya-30", name: "Anniversaire Aya 30 ans", date: "8 mars 2026", photos: 98, sold: 67, revenue: 22500, status: "ended", cover: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&h=400&fit=crop" },
-  { id: 4, slug: "corporate-jumia-ci", name: "Corporate Jumia CI", date: "1 mars 2026", photos: 310, sold: 124, revenue: 52000, status: "ended", cover: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600&h=400&fit=crop" },
-];
-
-const CLIENT_PHOTOS = [
-  { id: 1, url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=500&fit=crop", matched: true, price: 200 },
-  { id: 2, url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=500&fit=crop", matched: true, price: 200 },
-  { id: 3, url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400&h=500&fit=crop", matched: true, price: 200 },
-  { id: 4, url: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=500&fit=crop", matched: false, price: 200 },
-  { id: 5, url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=500&fit=crop", matched: false, price: 200 },
-  { id: 6, url: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=500&fit=crop", matched: true, price: 200 },
-  { id: 7, url: "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?w=400&h=500&fit=crop", matched: false, price: 200 },
-  { id: 8, url: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400&h=500&fit=crop", matched: true, price: 200 },
-];
-
-const DASHBOARD_PHOTOS = [
-  { id: 1, url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=200&h=200&fit=crop", event: "Mariage Sarah & Konan", faces: 3, sold: true },
-  { id: 2, url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=200&h=200&fit=crop", event: "Mariage Sarah & Konan", faces: 2, sold: true },
-  { id: 3, url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=200&h=200&fit=crop", event: "Mariage Sarah & Konan", faces: 5, sold: false },
-  { id: 4, url: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=200&h=200&fit=crop", event: "Mariage Sarah & Konan", faces: 1, sold: true },
-  { id: 5, url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=200&h=200&fit=crop", event: "Baptême Petit David", faces: 2, sold: false },
-  { id: 6, url: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=200&h=200&fit=crop", event: "Baptême Petit David", faces: 4, sold: true },
-  { id: 7, url: "https://images.unsplash.com/photo-1460978812857-470ed1c77af0?w=200&h=200&fit=crop", event: "Anniversaire Aya 30 ans", faces: 2, sold: false },
-  { id: 8, url: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=200&h=200&fit=crop", event: "Anniversaire Aya 30 ans", faces: 3, sold: true },
-];
-
-const REVENUE_DATA = [
-  { month: "Oct", amount: 18000 },{ month: "Nov", amount: 32000 },{ month: "Dec", amount: 45000 },
-  { month: "Jan", amount: 28000 },{ month: "Fév", amount: 52000 },{ month: "Mar", amount: 127000 },
-];
+// Helper API
+async function apiFetch(endpoint, options = {}) {
+  const token = localStorage.getItem("fotokash_token");
+  const config = {
+    headers: { ...(token && { Authorization: `Bearer ${token}` }), ...options.headers },
+    ...options,
+  };
+  if (!(options.body instanceof FormData)) {
+    config.headers["Content-Type"] = "application/json";
+  }
+  const res = await fetch(`${API}${endpoint}`, config);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Erreur serveur");
+  return data;
+}
 
 const PACKS = [
   { count: 1, price: 200, label: "1 photo", savings: null },
@@ -78,9 +62,11 @@ const Icon = ({ type, size = 20 }) => {
     face: <svg {...props} strokeWidth="1.2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9" strokeWidth="2.5"/><line x1="15" y1="9" x2="15.01" y2="9" strokeWidth="2.5"/></svg>,
     menu: <svg {...props}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
     close: <svg {...props}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+    trash: <svg {...props}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>,
+    plus: <svg {...props}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
   };
   return icons[type] || null;
-}
+};
 
 const WatermarkOverlay = () => (
   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.08)", pointerEvents: "none" }}>
@@ -89,15 +75,16 @@ const WatermarkOverlay = () => (
 );
 
 const MiniChart = ({ data }) => {
-  const max = Math.max(...data.map(d => d.amount));
+  if (!data || data.length === 0) return <div style={{ height: 160, display: "flex", alignItems: "center", justifyContent: "center", color: "rgba(255,255,255,0.3)", fontSize: 13 }}>Pas encore de données</div>;
+  const max = Math.max(...data.map(d => d.amount)) || 1;
   const h = 120, w = 100;
-  const points = data.map((d, i) => `${(i / (data.length - 1)) * w},${h - (d.amount / max) * h}`).join(" ");
+  const points = data.map((d, i) => `${(i / Math.max(data.length - 1, 1)) * w},${h - (d.amount / max) * h}`).join(" ");
   return (
     <svg viewBox={`-4 -4 ${w + 8} ${h + 28}`} style={{ width: "100%", height: 160 }}>
       <polyline points={points} fill="none" stroke="#E8593C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       {data.map((d, i) => (
-        <g key={i}><circle cx={(i / (data.length - 1)) * w} cy={h - (d.amount / max) * h} r="3" fill="#E8593C"/>
-        <text x={(i / (data.length - 1)) * w} y={h + 18} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.4)">{d.month}</text></g>
+        <g key={i}><circle cx={(i / Math.max(data.length - 1, 1)) * w} cy={h - (d.amount / max) * h} r="3" fill="#E8593C"/>
+        <text x={(i / Math.max(data.length - 1, 1)) * w} y={h + 18} textAnchor="middle" fontSize="10" fill="rgba(255,255,255,0.4)">{d.month}</text></g>
       ))}
     </svg>
   );
@@ -106,6 +93,9 @@ const MiniChart = ({ data }) => {
 /* ============ LANDING PAGE ============ */
 function LandingPage({ navigate }) {
   const m = useIsMobile();
+  const [events, setEvents] = useState([]);
+  useEffect(() => { apiFetch("/events").then(d => setEvents(d.events || [])).catch(() => {}); }, []);
+
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff" }}>
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: m ? "16px 20px" : "20px 40px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
@@ -140,27 +130,10 @@ function LandingPage({ navigate }) {
           </div>
         ))}
       </div>
-      <div style={{ padding: m ? "20px 20px 60px" : "40px 40px 80px", maxWidth: 900, margin: "0 auto" }}>
-        <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 22 : 28, fontWeight: 700, textAlign: "center", marginBottom: 24 }}>Événements récents</h2>
-        <div style={{ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
-          {EVENTS.map(ev => (
-            <div key={ev.id} onClick={() => navigate("event")} style={{ borderRadius: 12, overflow: "hidden", cursor: "pointer", position: "relative", aspectRatio: "3/4" }}>
-              <img src={ev.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.5)" }}/>
-              <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.8))" }}/>
-              <div style={{ position: "absolute", bottom: 12, left: 12, right: 12 }}>
-                <div style={{ fontSize: m ? 12 : 14, fontWeight: 600 }}>{ev.name}</div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{ev.photos} photos</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
       <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: m ? "20px" : "24px 40px", display: "flex", flexDirection: m ? "column" : "row", justifyContent: "space-between", alignItems: m ? "flex-start" : "center", gap: 12 }}>
         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>FotoKash 2026</span>
         <div style={{ display: "flex", gap: 16 }}>
-          {["Tarifs", "À propos", "Contact", "CGU"].map(l => (
-            <span key={l} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>{l}</span>
-          ))}
+          {["Tarifs", "À propos", "Contact", "CGU"].map(l => (<span key={l} style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", cursor: "pointer" }}>{l}</span>))}
         </div>
       </div>
     </div>
@@ -176,8 +149,25 @@ function LoginPage({ navigate }) {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = () => { setLoading(true); setTimeout(() => { setLoading(false); navigate("dashboard"); }, 1500); };
+  const handleSubmit = async () => {
+    setLoading(true); setError("");
+    try {
+      if (mode === "signup") {
+        const data = await apiFetch("/auth/signup", { method: "POST", body: JSON.stringify({ studio_name: name, email, password }) });
+        localStorage.setItem("fotokash_token", data.token);
+        localStorage.setItem("fotokash_user", JSON.stringify(data.user));
+      } else {
+        const data = await apiFetch("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) });
+        localStorage.setItem("fotokash_token", data.token);
+        localStorage.setItem("fotokash_user", JSON.stringify(data.user));
+      }
+      navigate("dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally { setLoading(false); }
+  };
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: m ? "column" : "row" }}>
@@ -186,12 +176,9 @@ function LoginPage({ navigate }) {
           <div style={{ width: 32, height: 32, background: "#E8593C", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>F</div>
           <span style={{ fontWeight: 700, fontSize: 18 }}>FotoKash</span>
         </div>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 26 : 32, fontWeight: 700, margin: "0 0 8px" }}>
-          {mode === "login" ? "Bon retour" : "Créer un compte"}
-        </h1>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", margin: "0 0 28px" }}>
-          {mode === "login" ? "Connectez-vous à votre espace photographe" : "Rejoignez FotoKash et commencez à vendre"}
-        </p>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: m ? 26 : 32, fontWeight: 700, margin: "0 0 8px" }}>{mode === "login" ? "Bon retour" : "Créer un compte"}</h1>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.45)", margin: "0 0 28px" }}>{mode === "login" ? "Connectez-vous à votre espace photographe" : "Rejoignez FotoKash et commencez à vendre"}</p>
+        {error && <div style={{ background: "rgba(224,68,68,0.1)", border: "1px solid rgba(224,68,68,0.3)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#F09595" }}>{error}</div>}
         {mode === "signup" && (
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", display: "block", marginBottom: 6 }}>Nom du studio</label>
@@ -216,20 +203,12 @@ function LoginPage({ navigate }) {
             <button onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "rgba(255,255,255,0.3)", cursor: "pointer", padding: 0 }}><Icon type={showPassword ? "eyeOff" : "eye"} size={18}/></button>
           </div>
         </div>
-        {mode === "login" && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-            <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "rgba(255,255,255,0.5)", cursor: "pointer" }}>
-              <input type="checkbox" style={{ accentColor: "#E8593C" }}/> Se souvenir de moi
-            </label>
-            <span style={{ fontSize: 13, color: "#E8593C", cursor: "pointer" }}>Mot de passe oublié ?</span>
-          </div>
-        )}
         <button onClick={handleSubmit} disabled={loading} style={{ width: "100%", padding: "16px", background: loading ? "rgba(232,89,60,0.6)" : "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 16, fontWeight: 600, cursor: "pointer", boxShadow: "0 4px 24px rgba(232,89,60,0.3)" }}>
-          {loading ? "Connexion en cours..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+          {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
         </button>
         <div style={{ textAlign: "center", marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.45)" }}>
           {mode === "login" ? "Pas encore de compte ? " : "Déjà un compte ? "}
-          <span onClick={() => setMode(mode === "login" ? "signup" : "login")} style={{ color: "#E8593C", cursor: "pointer", fontWeight: 500 }}>{mode === "login" ? "S'inscrire" : "Se connecter"}</span>
+          <span onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }} style={{ color: "#E8593C", cursor: "pointer", fontWeight: 500 }}>{mode === "login" ? "S'inscrire" : "Se connecter"}</span>
         </div>
       </div>
       {!m && (
@@ -239,11 +218,6 @@ function LoginPage({ navigate }) {
           <div style={{ position: "absolute", bottom: 50, left: 50, right: 50 }}>
             <div style={{ fontSize: 28, fontWeight: 700, fontFamily: "'Playfair Display', serif", lineHeight: 1.3, marginBottom: 12 }}>Transformez chaque photo en revenu</div>
             <p style={{ fontSize: 15, color: "rgba(255,255,255,0.6)", lineHeight: 1.5 }}>Rejoignez les photographes qui utilisent FotoKash.</p>
-            <div style={{ display: "flex", gap: 28, marginTop: 24 }}>
-              {[{ val: "2,400+", label: "Photographes" }, { val: "180K", label: "Photos vendues" }, { val: "12M", label: "FCFA générés" }].map((s, i) => (
-                <div key={i}><div style={{ fontSize: 22, fontWeight: 700 }}>{s.val}</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>{s.label}</div></div>
-              ))}
-            </div>
           </div>
         </div>
       )}
@@ -268,33 +242,25 @@ function ClientEventPage({ navigate }) {
   const [showCamera, setShowCamera] = useState(false);
   const selfieRef = useRef();
   const videoRef = useRef();
-  const event = EVENTS[0];
+
+  // Données démo pour la page client (les clients n'ont pas besoin d'auth)
+  const event = { name: "Mariage Sarah & Konan", date: "23 mars 2026", photos: 247, cover: "https://images.unsplash.com/photo-1519741497674-611481863552?w=600&h=400&fit=crop" };
+  const CLIENT_PHOTOS = [
+    { id: 1, url: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&h=500&fit=crop", matched: true, price: 200 },
+    { id: 2, url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&h=500&fit=crop", matched: true, price: 200 },
+    { id: 3, url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=400&h=500&fit=crop", matched: true, price: 200 },
+    { id: 4, url: "https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=400&h=500&fit=crop", matched: false, price: 200 },
+    { id: 5, url: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=400&h=500&fit=crop", matched: false, price: 200 },
+    { id: 6, url: "https://images.unsplash.com/photo-1537633552985-df8429e8048b?w=400&h=500&fit=crop", matched: true, price: 200 },
+  ];
   const photos = filter === "me" ? CLIENT_PHOTOS.filter(p => p.matched) : CLIENT_PHOTOS;
   const totalPrice = () => { const c = selectedPhotos.length; if (c === 0) return 0; if (c >= 11) return 1000; if (c >= 6) return 500; return c * 200; };
   const toggleSelect = (id) => setSelectedPhotos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const launchScan = () => { setScanning(true); setScanProgress(0); const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false); setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200); };
-  const startScan = () => {
-    if (/Mobi|Android/i.test(navigator.userAgent)) {
-      selfieRef.current?.click();
-    } else {
-      setShowSelfieChoice(true);
-    }
-  };
+  const startScan = () => { if (/Mobi|Android/i.test(navigator.userAgent)) { selfieRef.current?.click(); } else { setShowSelfieChoice(true); } };
   const handleSelfieCapture = (e) => { const file = e.target.files?.[0]; if (!file) return; setShowSelfieChoice(false); launchScan(); };
-  const openWebcam = () => {
-    setShowSelfieChoice(false);
-    setShowCamera(true);
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 480 } })
-      .then(stream => { if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); } })
-      .catch(() => { setShowCamera(false); selfieRef.current?.click(); });
-  };
-  const captureFromWebcam = () => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.srcObject?.getTracks().forEach(t => t.stop());
-    setShowCamera(false);
-    launchScan();
-  };
+  const openWebcam = () => { setShowSelfieChoice(false); setShowCamera(true); navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 480 } }).then(stream => { if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.play(); } }).catch(() => { setShowCamera(false); selfieRef.current?.click(); }); };
+  const captureFromWebcam = () => { const v = videoRef.current; if (!v) return; v.srcObject?.getTracks().forEach(t => t.stop()); setShowCamera(false); launchScan(); };
   const closeCamera = () => { videoRef.current?.srcObject?.getTracks().forEach(t => t.stop()); setShowCamera(false); };
   const handlePayment = () => { if (!paymentMethod || phoneNumber.length < 8) return; setProcessing(true); setTimeout(() => { setProcessing(false); setPurchased(true); }, 2500); };
 
@@ -303,7 +269,7 @@ function ClientEventPage({ navigate }) {
       <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "32px 28px", width: "100%", maxWidth: 380, textAlign: "center" }}>
         <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(232,89,60,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: "#E8593C" }}><Icon type="face" size={32}/></div>
         <h2 style={{ fontSize: 20, fontWeight: 700, margin: "0 0 8px" }}>Trouver mes photos</h2>
-        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px", lineHeight: 1.5 }}>Choisissez comment vous identifier pour retrouver vos photos dans cet événement</p>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 28px", lineHeight: 1.5 }}>Comment souhaitez-vous vous identifier ?</p>
         <button onClick={openWebcam} style={{ width: "100%", padding: "16px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 12, boxShadow: "0 4px 20px rgba(232,89,60,0.3)" }}><Icon type="camera" size={20}/> Prendre un selfie</button>
         <button onClick={() => { setShowSelfieChoice(false); selfieRef.current?.click(); }} style={{ width: "100%", padding: "16px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 500, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}><Icon type="upload" size={20}/> Joindre une photo</button>
         <button onClick={() => setShowSelfieChoice(false)} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, marginTop: 18, cursor: "pointer" }}>Annuler</button>
@@ -352,14 +318,14 @@ function ClientEventPage({ navigate }) {
       <h2 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 4px" }}>Paiement</h2>
       <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)", margin: "0 0 24px" }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""}</p>
       <div style={{ background: "rgba(255,255,255,0.05)", borderRadius: 14, padding: 16, marginBottom: 24, border: "1px solid rgba(255,255,255,0.08)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "rgba(255,255,255,0.6)" }}><span>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""} (à 200 F)</span><span>{(selectedPhotos.length * 200).toLocaleString()} F</span></div>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "rgba(255,255,255,0.6)" }}><span>{selectedPhotos.length} x 200 F</span><span>{(selectedPhotos.length * 200).toLocaleString()} F</span></div>
         {totalPrice() < selectedPhotos.length * 200 && <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 8, color: "#4ADE80" }}><span>Réduction pack</span><span>-{(selectedPhotos.length * 200 - totalPrice()).toLocaleString()} F</span></div>}
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 18, fontWeight: 700 }}><span>Total</span><span style={{ color: "#E8593C" }}>{totalPrice().toLocaleString()} FCFA</span></div>
       </div>
       <h3 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>Moyen de paiement</h3>
       <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
         {[{ id: "orange", name: "Orange Money", color: "#FF6B00", icon: "OM" }, { id: "mtn", name: "MTN MoMo", color: "#FFCC00", tc: "#000", icon: "MM" }, { id: "wave", name: "Wave", color: "#1DC3E8", icon: "W" }].map(pm => (
-          <button key={pm.id} onClick={() => setPaymentMethod(pm.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: paymentMethod === pm.id ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.05)", border: paymentMethod === pm.id ? "1.5px solid #E8593C" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "#fff", width: "100%", textAlign: "left" }}>
+          <button key={pm.id} onClick={() => setPaymentMethod(pm.id)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: paymentMethod === pm.id ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.05)", border: paymentMethod === pm.id ? "1.5px solid #E8593C" : "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "#fff", width: "100%" }}>
             <div style={{ width: 40, height: 40, borderRadius: 10, background: pm.color, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: pm.tc || "#fff" }}>{pm.icon}</div>
             <span style={{ fontSize: 15, fontWeight: 500 }}>{pm.name}</span>
             {paymentMethod === pm.id && <div style={{ marginLeft: "auto", color: "#E8593C" }}><Icon type="check" size={16}/></div>}
@@ -400,14 +366,9 @@ function ClientEventPage({ navigate }) {
               <img src={photo.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
               <WatermarkOverlay/>
               {photo.matched && filter === "all" && <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(74,222,128,0.2)", backdropFilter: "blur(8px)", borderRadius: 6, padding: "2px 7px", fontSize: 10, color: "#4ADE80", fontWeight: 600 }}>Vous</div>}
-              <button onClick={() => toggleSelect(photo.id)} style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: 7, background: selected ? "#E8593C" : "rgba(0,0,0,0.4)", border: selected ? "none" : "1.5px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>
-                {selected && <Icon type="check" size={12}/>}
-              </button>
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 8px 6px", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}>
-                <span style={{ fontSize: 11, fontWeight: 600 }}>{photo.price} F</span>
-              </div>
-            </div>
-          );
+              <button onClick={() => toggleSelect(photo.id)} style={{ position: "absolute", top: 6, right: 6, width: 26, height: 26, borderRadius: 7, background: selected ? "#E8593C" : "rgba(0,0,0,0.4)", border: selected ? "none" : "1.5px solid rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#fff" }}>{selected && <Icon type="check" size={12}/>}</button>
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "18px 8px 6px", background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }}><span style={{ fontSize: 11, fontWeight: 600 }}>{photo.price} F</span></div>
+            </div>);
         })}
       </div>
       {selectedPhotos.length > 0 && (
@@ -456,27 +417,89 @@ function ClientEventPage({ navigate }) {
   );
 }
 
-/* ============ DASHBOARD ============ */
+/* ============ DASHBOARD — CONNECTÉ AU BACK-END ============ */
 function DashboardPage({ navigate }) {
   const m = useIsMobile();
   const [tab, setTab] = useState("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [uploadDrag, setUploadDrag] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [photoFilter, setPhotoFilter] = useState("all");
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [userInfo, setUserInfo] = useState(null);
+  const [loadingData, setLoadingData] = useState(true);
   const [showNewEvent, setShowNewEvent] = useState(false);
+  const [newEventName, setNewEventName] = useState("");
+  const [newEventDate, setNewEventDate] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [error, setError] = useState("");
   const fileRef = useRef();
-  const totalSold = EVENTS.reduce((s, e) => s + e.sold, 0);
-  const totalPhotos = EVENTS.reduce((s, e) => s + e.photos, 0);
-  const simulateUpload = () => { setUploading(true); setUploadProgress(0); const iv = setInterval(() => { setUploadProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => setUploading(false), 600); return 100; } return prev + Math.random() * 8 + 3; }); }, 150); };
-  const filteredPhotos = photoFilter === "all" ? DASHBOARD_PHOTOS : DASHBOARD_PHOTOS.filter(p => p.event === photoFilter);
-  const navItems = [{ key: "dashboard", label: "Dashboard", icon: "dashboard" }, { key: "photos", label: "Photos", icon: "photos" }, { key: "events", label: "Événements", icon: "events" }];
+
+  // Charger les données au montage
+  useEffect(() => {
+    const token = localStorage.getItem("fotokash_token");
+    if (!token) { navigate("login"); return; }
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoadingData(true);
+    try {
+      const [profileData, eventsData] = await Promise.all([
+        apiFetch("/auth/me"),
+        apiFetch("/events"),
+      ]);
+      setUserInfo(profileData.user);
+      setEvents(eventsData.events || []);
+    } catch (err) {
+      if (err.message.includes("Token") || err.message.includes("connecter")) {
+        localStorage.removeItem("fotokash_token");
+        navigate("login");
+      }
+    } finally { setLoadingData(false); }
+  };
+
+  const createEvent = async () => {
+    if (!newEventName.trim()) return;
+    setCreating(true); setError("");
+    try {
+      await apiFetch("/events", { method: "POST", body: JSON.stringify({ name: newEventName, date: newEventDate || null }) });
+      setNewEventName(""); setNewEventDate(""); setShowNewEvent(false);
+      await loadData();
+    } catch (err) { setError(err.message); }
+    finally { setCreating(false); }
+  };
+
+  const deleteEvent = async (id) => {
+    if (!confirm("Supprimer cet événement ?")) return;
+    try {
+      await apiFetch(`/events/${id}`, { method: "DELETE" });
+      await loadData();
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("fotokash_token");
+    localStorage.removeItem("fotokash_user");
+    navigate("landing");
+  };
+
+  const totalPhotos = events.reduce((s, e) => s + Number(e.photos_count || 0), 0);
+  const totalSold = events.reduce((s, e) => s + Number(e.photos_sold || 0), 0);
+  const totalRevenue = events.reduce((s, e) => s + Number(e.revenue || 0), 0);
+  const studioName = userInfo?.studio_name || "Photographe";
+  const navItems = [{ key: "dashboard", label: "Dashboard", icon: "dashboard" }, { key: "events", label: "Événements", icon: "events" }];
+
+  if (loadingData) return (
+    <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ width: 40, height: 40, border: "3px solid rgba(232,89,60,0.2)", borderTop: "3px solid #E8593C", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }}/>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.5)" }}>Chargement...</p>
+      </div>
+    </div>
+  );
 
   return (
     <div style={{ fontFamily: "'DM Sans', sans-serif", minHeight: "100vh", background: "#0a0a0a", color: "#fff", display: "flex", flexDirection: m ? "column" : "row" }}>
-      {/* Mobile header */}
       {m && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -486,152 +509,120 @@ function DashboardPage({ navigate }) {
           <button onClick={() => setMenuOpen(!menuOpen)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 4 }}><Icon type={menuOpen ? "close" : "menu"} size={24}/></button>
         </div>
       )}
-      {/* Mobile menu overlay */}
       {m && menuOpen && (
         <div style={{ background: "rgba(0,0,0,0.95)", padding: "20px", display: "flex", flexDirection: "column", gap: 6 }}>
           {navItems.map(item => (
-            <button key={item.key} onClick={() => { setTab(item.key); setMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderRadius: 10, color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: tab === item.key ? 600 : 400, width: "100%" }}>
-              <Icon type={item.icon}/> {item.label}
-            </button>
+            <button key={item.key} onClick={() => { setTab(item.key); setMenuOpen(false); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderRadius: 10, color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 15, fontWeight: tab === item.key ? 600 : 400, width: "100%" }}><Icon type={item.icon}/> {item.label}</button>
           ))}
-          <button onClick={() => navigate("event")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 15, cursor: "pointer", width: "100%" }}><Icon type="eye" size={18}/> Voir côté client</button>
-          <button onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 15, cursor: "pointer", width: "100%" }}><Icon type="logout" size={18}/> Déconnexion</button>
+          <button onClick={handleLogout} style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 15, cursor: "pointer", width: "100%" }}><Icon type="logout" size={18}/> Déconnexion</button>
         </div>
       )}
-      {/* Desktop sidebar */}
       {!m && (
         <div style={{ width: 220, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "24px 0", flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <div style={{ padding: "0 20px", marginBottom: 36, display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 36, height: 36, background: "#E8593C", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>F</div>
-            <div><div style={{ fontWeight: 700, fontSize: 16 }}>FotoKash</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Studio Lumière</div></div>
+            <div><div style={{ fontWeight: 700, fontSize: 16 }}>FotoKash</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{studioName}</div></div>
           </div>
           {navItems.map(item => (
-            <button key={item.key} onClick={() => setTab(item.key)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderLeft: tab === item.key ? "3px solid #E8593C" : "3px solid transparent", color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: tab === item.key ? 600 : 400, width: "100%", textAlign: "left" }}>
-              <Icon type={item.icon}/> {item.label}
-            </button>
+            <button key={item.key} onClick={() => setTab(item.key)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 20px", border: "none", cursor: "pointer", background: tab === item.key ? "rgba(232,89,60,0.12)" : "transparent", borderLeft: tab === item.key ? "3px solid #E8593C" : "3px solid transparent", color: tab === item.key ? "#fff" : "rgba(255,255,255,0.5)", fontSize: 14, fontWeight: tab === item.key ? 600 : 400, width: "100%", textAlign: "left" }}><Icon type={item.icon}/> {item.label}</button>
           ))}
-          <div style={{ marginTop: 16, padding: "0 20px" }}><button onClick={() => navigate("event")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", width: "100%" }}><Icon type="eye" size={16}/> Voir côté client</button></div>
-          <div style={{ marginTop: "auto", padding: "0 20px" }}><button onClick={() => navigate("landing")} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", width: "100%" }}><Icon type="logout" size={16}/> Déconnexion</button></div>
+          <div style={{ marginTop: "auto", padding: "0 20px" }}><button onClick={handleLogout} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 13, cursor: "pointer", width: "100%" }}><Icon type="logout" size={16}/> Déconnexion</button></div>
         </div>
       )}
-      {/* Main content */}
       <div style={{ flex: 1, padding: m ? "20px 16px" : "28px 32px", overflowY: "auto", maxHeight: "100vh" }}>
+        {error && <div style={{ background: "rgba(224,68,68,0.1)", border: "1px solid rgba(224,68,68,0.3)", borderRadius: 10, padding: "12px 16px", marginBottom: 16, fontSize: 13, color: "#F09595" }}>{error} <button onClick={() => setError("")} style={{ float: "right", background: "none", border: "none", color: "#F09595", cursor: "pointer" }}>x</button></div>}
+
         {tab === "dashboard" && <>
-          <h1 style={{ fontSize: m ? 20 : 26, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Bonjour, Studio Lumière</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>Performances du mois</p>
+          <h1 style={{ fontSize: m ? 20 : 26, fontWeight: 700, margin: "0 0 4px", fontFamily: "'Playfair Display', serif" }}>Bonjour, {studioName}</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>Vos performances</p>
           <div style={{ display: "grid", gridTemplateColumns: m ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10, marginBottom: 20 }}>
             {[
-              { label: "Revenus", value: "127K F", accent: true, sub: "+144%" },
-              { label: "Vendues", value: totalSold, sub: `sur ${totalPhotos}` },
-              { label: "Conversion", value: `${Math.round((totalSold / totalPhotos) * 100)}%`, sub: "vues→achat" },
-              { label: "Événements", value: EVENTS.filter(e => e.status === "live").length, sub: `${EVENTS.length} total` },
+              { label: "Revenus", value: `${totalRevenue.toLocaleString()} F`, accent: true },
+              { label: "Événements", value: events.length },
+              { label: "Photos", value: totalPhotos },
+              { label: "Vendues", value: totalSold },
             ].map((s, i) => (
               <div key={i} style={{ background: s.accent ? "rgba(232,89,60,0.1)" : "rgba(255,255,255,0.04)", border: s.accent ? "1px solid rgba(232,89,60,0.25)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: m ? "14px" : "18px 20px" }}>
                 <div style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{s.label}</div>
                 <div style={{ fontSize: m ? 20 : 26, fontWeight: 700, color: s.accent ? "#E8593C" : "#fff" }}>{s.value}</div>
-                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", marginTop: 3 }}>{s.sub}</div>
               </div>
             ))}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: 14 }}>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>Revenus (6 mois)</h3>
-              <MiniChart data={REVENUE_DATA}/>
+          {events.length === 0 ? (
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
+              <Icon type="events" size={40}/>
+              <h3 style={{ fontSize: 16, fontWeight: 600, margin: "16px 0 8px" }}>Aucun événement</h3>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>Créez votre premier événement pour commencer à vendre vos photos</p>
+              <button onClick={() => { setTab("events"); setShowNewEvent(true); }} style={{ padding: "12px 28px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Créer un événement</button>
             </div>
+          ) : (
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "18px 20px" }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>Ventes récentes</h3>
-              {[
-                { name: "Moussa K.", photos: 5, amount: 1000, method: "Wave", time: "12 min" },
-                { name: "Aminata D.", photos: 3, amount: 600, method: "Orange", time: "34 min" },
-                { name: "Jean-Pierre", photos: 1, amount: 200, method: "MTN", time: "1h" },
-              ].map((s, i) => (
-                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: i < 2 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 500 }}>{s.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{s.photos}p — {s.method} — {s.time}</div></div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#4ADE80" }}>+{s.amount}F</div>
+              <h3 style={{ fontSize: 14, fontWeight: 600, margin: "0 0 10px" }}>Événements récents</h3>
+              {events.slice(0, 5).map((ev, i) => (
+                <div key={ev.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: i < Math.min(events.length, 5) - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                  <div><div style={{ fontSize: 13, fontWeight: 500 }}>{ev.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{ev.photos_count || 0} photos — {ev.status === "live" ? "En cours" : "Terminé"}</div></div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#4ADE80" }}>{Number(ev.revenue || 0).toLocaleString()} F</div>
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </>}
-        {tab === "photos" && <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-            <h1 style={{ fontSize: m ? 20 : 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Mes photos</h1>
-            <button onClick={() => fileRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 18px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}><Icon type="upload" size={16}/> Uploader</button>
-            <input ref={fileRef} type="file" multiple accept="image/*" style={{ display: "none" }} onChange={simulateUpload}/>
-          </div>
-          <div onDragOver={e => { e.preventDefault(); setUploadDrag(true); }} onDragLeave={() => setUploadDrag(false)} onDrop={e => { e.preventDefault(); setUploadDrag(false); simulateUpload(); }}
-            style={{ border: `2px dashed ${uploadDrag ? "#E8593C" : "rgba(255,255,255,0.1)"}`, borderRadius: 14, padding: uploading ? "16px" : "28px", textAlign: "center", marginBottom: 16, background: uploadDrag ? "rgba(232,89,60,0.06)" : "rgba(255,255,255,0.02)", cursor: "pointer" }}
-            onClick={() => !uploading && fileRef.current?.click()}>
-            {uploading ? <div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 6 }}><span>Upload...</span><span style={{ color: "#E8593C", fontWeight: 600 }}>{Math.min(Math.round(uploadProgress), 100)}%</span></div>
-              <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}><div style={{ height: "100%", width: `${Math.min(uploadProgress, 100)}%`, background: "#E8593C", borderRadius: 3, transition: "width 0.15s" }}/></div>
-            </div> : <><div style={{ color: "rgba(255,255,255,0.3)" }}><Icon type="upload" size={22}/></div><div style={{ fontSize: 14, fontWeight: 500, marginTop: 8 }}>Glissez vos photos ici</div><div style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>JPG, PNG, RAW</div></>}
-          </div>
-          <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
-            <button onClick={() => setPhotoFilter("all")} style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, border: "none", cursor: "pointer", background: photoFilter === "all" ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === "all" ? "#fff" : "rgba(255,255,255,0.5)" }}>Toutes ({DASHBOARD_PHOTOS.length})</button>
-            {[...new Set(DASHBOARD_PHOTOS.map(p => p.event))].map(ev => (
-              <button key={ev} onClick={() => setPhotoFilter(ev)} style={{ padding: "6px 14px", borderRadius: 20, fontSize: 12, border: "none", cursor: "pointer", background: photoFilter === ev ? "#E8593C" : "rgba(255,255,255,0.06)", color: photoFilter === ev ? "#fff" : "rgba(255,255,255,0.5)" }}>{ev.split(" ")[0]}</button>
-            ))}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: m ? "repeat(3, 1fr)" : "repeat(auto-fill, minmax(130px, 1fr))", gap: 6 }}>
-            {filteredPhotos.map(p => (
-              <div key={p.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1" }}>
-                <img src={p.url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}/>
-                <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 50%, rgba(0,0,0,0.6))" }}/>
-                <div style={{ position: "absolute", top: 4, left: 4, display: "flex", gap: 3 }}>
-                  {p.sold && <span style={{ background: "rgba(74,222,128,0.2)", borderRadius: 4, padding: "1px 5px", fontSize: 9, color: "#4ADE80", fontWeight: 600 }}>Vendue</span>}
-                  <span style={{ background: "rgba(255,255,255,0.15)", borderRadius: 4, padding: "1px 5px", fontSize: 9 }}>{p.faces}v.</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>}
+
         {tab === "events" && <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
-            <h1 style={{ fontSize: m ? 20 : 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Événements</h1>
-            <button onClick={() => setShowNewEvent(!showNewEvent)} style={{ padding: "10px 18px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>+ Nouveau</button>
+            <h1 style={{ fontSize: m ? 20 : 24, fontWeight: 700, margin: 0, fontFamily: "'Playfair Display', serif" }}>Événements ({events.length})</h1>
+            <button onClick={() => setShowNewEvent(!showNewEvent)} style={{ padding: "10px 18px", background: "#E8593C", border: "none", borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}><Icon type="plus" size={16}/> Nouveau</button>
           </div>
           {showNewEvent && (
             <div style={{ background: "rgba(232,89,60,0.06)", border: "1px solid rgba(232,89,60,0.2)", borderRadius: 12, padding: 16, marginBottom: 16 }}>
               <div style={{ display: "flex", flexDirection: m ? "column" : "row", gap: 10, marginBottom: 12 }}>
-                <input placeholder="Nom de l'événement" style={{ flex: 2, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
-                <input type="date" style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
+                <input value={newEventName} onChange={e => setNewEventName(e.target.value)} placeholder="Nom de l'événement" style={{ flex: 2, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
+                <input type="date" value={newEventDate} onChange={e => setNewEventDate(e.target.value)} style={{ flex: 1, padding: "10px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontSize: 13, outline: "none" }}/>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setShowNewEvent(false)} style={{ padding: "9px 16px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12, cursor: "pointer" }}>Annuler</button>
-                <button onClick={() => setShowNewEvent(false)} style={{ padding: "9px 16px", background: "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Créer</button>
+                <button onClick={createEvent} disabled={creating || !newEventName.trim()} style={{ padding: "9px 16px", background: creating ? "rgba(232,89,60,0.6)" : "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>{creating ? "Création..." : "Créer"}</button>
               </div>
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: 12 }}>
-            {EVENTS.map(ev => (
-              <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent === ev.id ? null : ev.id)} style={{ background: "rgba(255,255,255,0.04)", border: selectedEvent === ev.id ? "1px solid rgba(232,89,60,0.4)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, overflow: "hidden", cursor: "pointer" }}>
-                <div style={{ position: "relative", height: m ? 110 : 130, overflow: "hidden" }}>
-                  <img src={ev.cover} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", filter: "brightness(0.6)" }}/>
-                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(transparent 40%, rgba(0,0,0,0.7))" }}/>
-                  <span style={{ position: "absolute", top: 8, right: 8, padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, background: ev.status === "live" ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.15)", color: ev.status === "live" ? "#4ADE80" : "rgba(255,255,255,0.6)" }}>{ev.status === "live" ? "En cours" : "Terminé"}</span>
-                  <div style={{ position: "absolute", bottom: 10, left: 12 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{ev.name}</div><div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>{ev.date}</div></div>
-                </div>
-                <div style={{ padding: 14 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, textAlign: "center" }}>
-                    <div><div style={{ fontSize: 16, fontWeight: 700 }}>{ev.photos}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Photos</div></div>
-                    <div><div style={{ fontSize: 16, fontWeight: 700 }}>{ev.sold}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Vendues</div></div>
-                    <div><div style={{ fontSize: 16, fontWeight: 700, color: "#4ADE80" }}>{ev.revenue.toLocaleString()}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>FCFA</div></div>
-                  </div>
-                  {selectedEvent === ev.id && (
-                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 11, cursor: "pointer" }}>Copier lien</button>
-                        <button style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 11, cursor: "pointer" }}>QR code</button>
-                        <button onClick={e => { e.stopPropagation(); setTab("photos"); setPhotoFilter(ev.name); }} style={{ flex: 1, padding: "8px 0", background: "#E8593C", border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Photos</button>
+          {events.length === 0 && !showNewEvent ? (
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "40px 20px", textAlign: "center" }}>
+              <Icon type="events" size={40}/>
+              <h3 style={{ fontSize: 16, fontWeight: 600, margin: "16px 0 8px" }}>Aucun événement</h3>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", margin: "0 0 20px" }}>Commencez par créer votre premier événement</p>
+              <button onClick={() => setShowNewEvent(true)} style={{ padding: "12px 28px", background: "#E8593C", border: "none", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Créer un événement</button>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: m ? "1fr" : "1fr 1fr", gap: 12 }}>
+              {events.map(ev => (
+                <div key={ev.id} onClick={() => setSelectedEvent(selectedEvent === ev.id ? null : ev.id)} style={{ background: "rgba(255,255,255,0.04)", border: selectedEvent === ev.id ? "1px solid rgba(232,89,60,0.4)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 14, overflow: "hidden", cursor: "pointer" }}>
+                  <div style={{ padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700 }}>{ev.name}</div>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{ev.date ? new Date(ev.date).toLocaleDateString("fr-FR") : "Date non définie"}</div>
                       </div>
-                      <div style={{ marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>Lien : <span style={{ fontFamily: "monospace", color: "#E8593C" }}>fotokash.com/e/{ev.slug}</span></div>
+                      <span style={{ padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 600, background: ev.status === "live" ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.1)", color: ev.status === "live" ? "#4ADE80" : "rgba(255,255,255,0.5)" }}>{ev.status === "live" ? "En cours" : "Terminé"}</span>
                     </div>
-                  )}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6, textAlign: "center" }}>
+                      <div><div style={{ fontSize: 18, fontWeight: 700 }}>{ev.photos_count || 0}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Photos</div></div>
+                      <div><div style={{ fontSize: 18, fontWeight: 700 }}>{ev.photos_sold || 0}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>Vendues</div></div>
+                      <div><div style={{ fontSize: 18, fontWeight: 700, color: "#4ADE80" }}>{Number(ev.revenue || 0).toLocaleString()}</div><div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)" }}>FCFA</div></div>
+                    </div>
+                    {selectedEvent === ev.id && (
+                      <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>Lien : <span style={{ fontFamily: "monospace", color: "#E8593C" }}>fotokash.com/e/{ev.slug}</span></div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={e => { e.stopPropagation(); navigator.clipboard?.writeText(`https://fotokash.com/e/${ev.slug}`); }} style={{ flex: 1, padding: "8px 0", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 11, cursor: "pointer" }}>Copier lien</button>
+                          <button onClick={e => { e.stopPropagation(); deleteEvent(ev.id); }} style={{ flex: 1, padding: "8px 0", background: "rgba(224,68,68,0.1)", border: "1px solid rgba(224,68,68,0.2)", borderRadius: 8, color: "#F09595", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}><Icon type="trash" size={12}/> Supprimer</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </>}
       </div>
     </div>
@@ -640,7 +631,10 @@ function DashboardPage({ navigate }) {
 
 /* ============ APP ROUTER ============ */
 export default function FotoKashApp() {
-  const [page, setPage] = useState("landing");
+  const [page, setPage] = useState(() => {
+    const token = localStorage.getItem("fotokash_token");
+    return token ? "dashboard" : "landing";
+  });
   return (
     <div>
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
