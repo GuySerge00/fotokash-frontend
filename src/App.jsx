@@ -265,10 +265,17 @@ function ClientEventPage({ navigate }) {
   const [processing, setProcessing] = useState(false);
   const [purchased, setPurchased] = useState(false);
   const event = EVENTS[0];
+  const selfieRef = useRef();
   const photos = filter === "me" ? CLIENT_PHOTOS.filter(p => p.matched) : CLIENT_PHOTOS;
   const totalPrice = () => { const c = selectedPhotos.length; if (c === 0) return 0; if (c >= 11) return 1000; if (c >= 6) return 500; return c * 200; };
   const toggleSelect = (id) => setSelectedPhotos(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const startScan = () => { setScanning(true); setScanProgress(0); const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false); setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200); };
+  const startScan = () => { selfieRef.current?.click(); };
+  const handleSelfieCapture = (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setScanning(true); setScanProgress(0);
+  const iv = setInterval(() => { setScanProgress(prev => { if (prev >= 100) { clearInterval(iv); setTimeout(() => { setScanning(false);      setView("gallery"); setFilter("me"); }, 400); return 100; } return prev + Math.random() * 15 + 5; }); }, 200);
+};
   const handlePayment = () => { if (!paymentMethod || phoneNumber.length < 8) return; setProcessing(true); setTimeout(() => { setProcessing(false); setPurchased(true); }, 2500); };
 
   if (scanning) return (
@@ -382,6 +389,7 @@ function ClientEventPage({ navigate }) {
         </div>
       </div>
       <div style={{ padding: "20px 16px" }}>
+	<input ref={selfieRef} type="file" accept="image/*" capture="user" style={{ display: "none" }} onChange={handleSelfieCapture}/>
         <button onClick={startScan} style={{ width: "100%", padding: "15px 20px", background: "#E8593C", border: "none", borderRadius: 14, color: "#fff", fontSize: 15, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, boxShadow: "0 4px 24px rgba(232,89,60,0.35)" }}><Icon type="camera" size={20}/> Trouver mes photos par selfie</button>
         <button onClick={() => setView("gallery")} style={{ width: "100%", padding: "13px 20px", marginTop: 10, background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, color: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer" }}>Parcourir toute la galerie</button>
         <div style={{ marginTop: 24 }}>
