@@ -1,0 +1,161 @@
+.subscriptions-page { max-width: 1100px; }
+.sub-header { margin-bottom: 24px; }
+.sub-title { font-size: 24px; font-weight: 600; color: #f0f0f5; margin: 0; }
+.sub-subtitle { font-size: 14px; color: #6b6b80; margin: 4px 0 0; }
+
+.sub-tabs {
+  display: flex; gap: 2px; background: rgba(255,255,255,0.04); padding: 3px;
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 24px; width: fit-content;
+}
+
+.sub-tab {
+  padding: 8px 20px; border: none; background: transparent; color: #6b6b80;
+  font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
+}
+
+.sub-tab:hover { color: #a0a0b5; }
+.sub-tab.active { background: rgba(232,89,60,0.12); color: #E8593C; }
+
+.sub-loading { text-align: center; padding: 40px; color: #6b6b80; font-size: 14px; }
+
+/* Plans Grid */
+.plans-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+.plan-card {
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: 24px; transition: all 0.15s;
+}
+
+.plan-card:hover { border-color: rgba(255,255,255,0.12); }
+.plan-card.pro { border-color: rgba(232,89,60,0.4); box-shadow: 0 0 30px rgba(232,89,60,0.06); }
+
+.plan-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.plan-icon { font-size: 22px; }
+.plan-name { font-size: 18px; font-weight: 700; }
+
+.plan-popular {
+  font-size: 9px; font-weight: 700; background: #E8593C; color: #fff;
+  padding: 2px 8px; border-radius: 10px; letter-spacing: 0.5px; margin-left: auto;
+}
+
+.plan-price { margin-bottom: 20px; }
+.price-value { font-size: 28px; font-weight: 700; color: #f0f0f5; }
+.price-period { font-size: 14px; color: #6b6b80; }
+
+.plan-details { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+
+.plan-detail-row {
+  display: flex; justify-content: space-between; padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 13px; color: #8b8b9e;
+}
+
+.plan-detail-row:last-child { border-bottom: none; }
+.plan-detail-value { font-weight: 600; color: #f0f0f5; }
+
+.plan-users { font-size: 12px; color: #6b6b80; margin-bottom: 14px; }
+
+.edit-plan-btn {
+  width: 100%; padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03); color: #8b8b9e; font-size: 13px; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
+}
+
+.edit-plan-btn:hover { background: rgba(255,255,255,0.06); color: #f0f0f5; }
+
+/* Edit form */
+.plan-edit-form { display: flex; flex-direction: column; gap: 12px; }
+
+.edit-field label {
+  display: block; font-size: 11px; color: #6b6b80; margin-bottom: 4px; font-weight: 500;
+}
+
+.edit-field input {
+  width: 100%; padding: 10px 12px; background: #0B0B0F; border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px; color: #f0f0f5; font-size: 14px; outline: none;
+  font-family: 'DM Sans', system-ui, sans-serif; box-sizing: border-box;
+}
+
+.edit-field input:focus { border-color: #E8593C; }
+
+.toggle-btn {
+  padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.toggle-btn.on { background: rgba(74,222,128,0.1); color: #4ADE80; }
+.toggle-btn.off { background: rgba(239,68,68,0.1); color: #ef4444; }
+
+.edit-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+.save-btn {
+  flex: 1; padding: 10px; border-radius: 8px; border: none; background: #E8593C;
+  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.save-btn:disabled { opacity: 0.5; }
+
+.cancel-btn {
+  padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);
+  background: transparent; color: #6b6b80; font-size: 13px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+/* Commissions */
+.commissions-section { }
+
+.comm-period-selector {
+  display: flex; gap: 2px; background: rgba(255,255,255,0.04); padding: 3px;
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px; width: fit-content;
+}
+
+.comm-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+
+.comm-kpi {
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: 22px;
+}
+
+.comm-kpi.highlight { border-color: rgba(232,89,60,0.3); background: rgba(232,89,60,0.04); }
+
+.comm-kpi-label { display: block; font-size: 12px; color: #6b6b80; font-weight: 500; margin-bottom: 6px; }
+.comm-kpi-value { display: block; font-size: 28px; font-weight: 700; color: #f0f0f5; }
+.comm-kpi-unit { display: block; font-size: 12px; color: #6b6b80; margin-top: 2px; }
+
+.comm-table-card {
+  background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px; padding: 22px;
+}
+
+.comm-table-title { font-size: 14px; font-weight: 600; color: #c8c8d8; margin: 0 0 16px; }
+
+.comm-table-header, .comm-table-row {
+  display: grid; grid-template-columns: 1fr 0.7fr 0.7fr 1.2fr 1.2fr 1.2fr;
+  gap: 8px; padding: 10px 0; font-size: 13px;
+}
+
+.comm-table-header {
+  color: #6b6b80; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.comm-table-row { color: #e0e0ec; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.comm-table-row:last-child { border-bottom: none; }
+
+.comm-empty { text-align: center; padding: 40px; color: #6b6b80; font-size: 14px; }
+
+.period-btn {
+  padding: 7px 16px; border: none; background: transparent; color: #6b6b80;
+  font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
+}
+
+.period-btn:hover { color: #a0a0b5; }
+.period-btn.active { background: rgba(232,89,60,0.12); color: #E8593C; }
+
+@media (max-width: 900px) {
+  .plans-grid { grid-template-columns: 1fr; }
+  .comm-kpis { grid-template-columns: 1fr; }
+  .comm-table-header, .comm-table-row { font-size: 11px; }
+}
