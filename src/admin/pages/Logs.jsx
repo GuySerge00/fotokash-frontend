@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Logs.css';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const actionLabels = {
   admin_login: '🔑 Connexion admin',

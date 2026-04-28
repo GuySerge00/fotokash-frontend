@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Photographers.css';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const formatFCFA = (amount) => new Intl.NumberFormat('fr-FR').format(Math.round(amount));
 const formatDate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Settings.css';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const settingGroups = {
   'Général': ['platform_name', 'platform_email', 'currency', 'maintenance_mode'],

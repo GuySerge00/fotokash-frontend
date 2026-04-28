@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './Dashboard.css';
 
-const API_URL = '/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const formatFCFA = (amount) => {
   return new Intl.NumberFormat('fr-FR').format(Math.round(amount));

@@ -7,7 +7,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 //  Côte d'Ivoire · fotokash.com
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-const API = "/api";
+const API = import.meta.env.VITE_API_URL || "/api";
 
 // â”€â”€â”€ Design Tokens â”€â”€â”€
 const T = {
