@@ -108,7 +108,7 @@ const Input = ({ label, ...props }) => (
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SCREEN 1 â€” LANDING PAGE
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-function LandingPage({ onNavigate }) {
+function LandingPage({ onNavigate, platform }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Nav */}
@@ -235,8 +235,8 @@ function LandingPage({ onNavigate }) {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         fontSize: 12, color: T.textDim,
       }}>
-        <span>© 2026 FotoKash · Abidjan, Côte d'Ivoire</span>
-        <span>fotokash.com</span>
+        <span>{"© 2026 " + (platform ? platform.name : "FotoKash") + " · Abidjan, Côte d'Ivoire"}</span>
+        <span>{platform ? platform.email : "contact@fotokash.com"}</span>
       </footer>
     </div>
   );
@@ -370,11 +370,91 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SCREEN 3 â€” PHOTOGRAPHER DASHBOARD
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function AccountTab({ token }) {
+  var currentPwd = "";
+  var newPwd = "";
+  var confirmPwd = "";
+  var msgEl = null;
+  
+  function handleChange() {
+    currentPwd = document.getElementById("fk-current-pwd").value;
+    newPwd = document.getElementById("fk-new-pwd").value;
+    confirmPwd = document.getElementById("fk-confirm-pwd").value;
+    msgEl = document.getElementById("fk-pwd-msg");
+    
+    if (!currentPwd || !newPwd || !confirmPwd) {
+      msgEl.textContent = "Remplissez tous les champs.";
+      msgEl.style.color = T.red;
+      return;
+    }
+    if (newPwd.length < 6) {
+      msgEl.textContent = "Le nouveau mot de passe doit faire au moins 6 caracteres.";
+      msgEl.style.color = T.red;
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      msgEl.textContent = "Les mots de passe ne correspondent pas.";
+      msgEl.style.color = T.red;
+      return;
+    }
+    
+    msgEl.textContent = "Modification en cours...";
+    msgEl.style.color = T.textMuted;
+    
+    fetch(API + "/auth/change-password", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ current_password: currentPwd, new_password: newPwd }),
+    })
+    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+    .then(function(res) {
+      if (res.ok) {
+        msgEl.textContent = "Mot de passe modifie avec succes !";
+        msgEl.style.color = T.green;
+        document.getElementById("fk-current-pwd").value = "";
+        document.getElementById("fk-new-pwd").value = "";
+        document.getElementById("fk-confirm-pwd").value = "";
+      } else {
+        msgEl.textContent = res.data.error || "Erreur";
+        msgEl.style.color = T.red;
+      }
+    })
+    .catch(function() {
+      msgEl.textContent = "Erreur de connexion.";
+      msgEl.style.color = T.red;
+    });
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, marginBottom: 24, fontWeight: 700 }}>Mon compte</h2>
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "28px 24px", maxWidth: 450 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Changer le mot de passe</h3>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Mot de passe actuel</label>
+          <input id="fk-current-pwd" type="password" placeholder="Votre mot de passe actuel" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Nouveau mot de passe</label>
+          <input id="fk-new-pwd" type="password" placeholder="Minimum 6 caracteres" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Confirmer le nouveau mot de passe</label>
+          <input id="fk-confirm-pwd" type="password" placeholder="Retapez le nouveau mot de passe" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+        </div>
+        <p id="fk-pwd-msg" style={{ fontSize: 13, marginBottom: 16, minHeight: 20 }}></p>
+        <button onClick={handleChange} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Modifier le mot de passe</button>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
   const [user, setUser] = useState(initialUser);
   const [tab, setTab] = useState("stats");
 
-// Recharger le profil Ã  chaque visite pour synchro admin
+// Recharger le profil à chaque visite pour synchro admin
   useEffect(() => {
     fetch(API + "/auth/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
@@ -408,6 +488,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
     { id: "stats", label: "Statistiques", icon: Icon.BarChart(16) },
     { id: "photos", label: "Photos", icon: Icon.Image(16) },
     { id: "events", label: "Événements", icon: Icon.Calendar(16) },
+      { id: "account", label: "Mon compte", icon: Icon.Users(16) },
   ];
 
   return (
@@ -464,7 +545,8 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
       <div style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
         {tab === "stats" && <StatsTab token={token} />}
         {tab === "photos" && <PhotosTab token={token} events={events} />}
-	{tab === "events" && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}      </div>
+	{tab === "events" && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
+        {tab === "account" && <AccountTab token={token} />}      </div>
     </div>
   );
 }
@@ -594,7 +676,7 @@ function PhotosTab({ token, events }) {
           <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
             {Icon.Upload(22)} Uploader des photos
           </h2>
-          <p style={{ color: T.textMuted, fontSize: 13, marginTop: 4 }}>Ajoutez vos photos Ã  un événement pour les vendre</p>
+          <p style={{ color: T.textMuted, fontSize: 13, marginTop: 4 }}>Ajoutez vos photos à un événement pour les vendre</p>
         </div>
         {files.length > 0 && (
           <div style={{ fontSize: 12, color: T.textMuted }}>
@@ -746,8 +828,64 @@ function PhotosTab({ token, events }) {
 }
 
 // â”€â”€â”€ Events Tab â”€â”€â”€
+
+function EventPhotosViewer({ eventId, eventName, token, onClose }) {
+  var photosState = useState([]);
+  var loadingState = useState(true);
+  var photos = photosState[0];
+  var setPhotos = photosState[1];
+  var loading = loadingState[0];
+  var setLoading = loadingState[1];
+
+  useEffect(function() {
+    fetch(API + "/photos/event/" + eventId + "/public")
+      .then(function(r) { return r.json(); })
+      .then(function(d) { setPhotos(d.photos || []); setLoading(false); })
+      .catch(function() { setLoading(false); });
+  }, [eventId]);
+
+  var deletePhoto = function(photoId) {
+    if (!window.confirm("Supprimer cette photo ?")) return;
+    fetch(API + "/photos/" + photoId, {
+      method: "DELETE",
+      headers: { Authorization: "Bearer " + token },
+    }).then(function(r) {
+      if (r.ok) setPhotos(function(prev) { return prev.filter(function(p) { return p.id !== photoId; }); });
+    });
+  };
+
+  return (
+    <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: 24, marginBottom: 20, animation: "slideDown 0.3s ease" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>{eventName}</h3>
+          <p style={{ fontSize: 12, color: T.textMuted }}>{photos.length} photo{photos.length !== 1 ? "s" : ""}</p>
+        </div>
+        <button onClick={onClose} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 8, padding: "8px 16px", color: T.textMuted, cursor: "pointer", fontSize: 13, fontFamily: T.font }}>Fermer</button>
+      </div>
+      {loading ? (
+        <p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: 20 }}>Chargement...</p>
+      ) : photos.length === 0 ? (
+        <p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: 20 }}>Aucune photo</p>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
+          {photos.map(function(p) {
+            return (
+              <div key={p.id} style={{ position: "relative", borderRadius: T.radiusSm, overflow: "hidden", aspectRatio: "1", border: "1px solid " + T.border }}>
+                <img src={p.thumbnail_url || p.watermarked_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <button onClick={function() { deletePhoto(p.id); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(239,68,68,0.85)", border: "none", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", fontSize: 12 }}>X</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EventsTab({ token, events, setEvents, loading, onNavigate }) {
   const [showForm, setShowForm] = useState(false);
+  const [viewingEvent, setViewingEvent] = useState(null);
   const [form, setForm] = useState({ name: "", date: "", location: "", description: "" });
   const [creating, setCreating] = useState(false);
 
@@ -795,6 +933,16 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
         </div>
       )}
 
+      {viewingEvent && (
+        <EventPhotosViewer
+          eventId={viewingEvent.id}
+          eventName={viewingEvent.name}
+          token={token}
+          onClose={function() { setViewingEvent(null); }}
+        />
+      )}
+
+
       {loading && <p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: 40 }}>Chargement...</p>}
 
       {!loading && events.length === 0 && (
@@ -818,31 +966,16 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
             }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{e.name}</div>
-                <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 12 }}>
-                  {e.date && <span>{Icon.Calendar(12)} {new Date(e.date).toLocaleDateString("fr-FR")}</span>}
+                <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  {e.date && <span>{new Date(e.date).toLocaleDateString("fr-FR")}</span>}
                   {e.location && <span>{e.location}</span>}
-                  {e.slug && <span style={{ color: T.accent, cursor: "pointer", textDecoration: "underline" }} onClick={() => onNavigate("client", { slug: e.slug })}>Voir page client</span>}
+                  <span style={{ color: T.accent, cursor: "pointer", textDecoration: "underline" }} onClick={function(ev) { ev.stopPropagation(); navigator.clipboard.writeText("https://fotokash.com/e/" + e.slug).then(function() { alert("Lien copie : https://fotokash.com/e/" + e.slug); }); }}>Copier le lien</span>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 12, color: T.textDim }}>
-                  {e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""}
-                </span>
-                <button onClick={(ev) => {
-                  ev.stopPropagation();
-                  if (window.confirm(`Supprimer "${e.name}" et toutes ses photos ? Cette action est irréversible.`)) {
-                    fetch(API + "/events/" + e.id, {
-                      method: "DELETE",
-                      headers: { Authorization: `Bearer ${token}` },
-                    }).then(r => {
-                      if (r.ok) setEvents(prev => prev.filter(x => x.id !== e.id));
-                    });
-                  }
-                }} style={{
-                  background: "rgba(239,68,68,0.08)", border: "none", borderRadius: 6,
-                  padding: "4px 8px", cursor: "pointer", color: T.red, display: "flex",
-                  alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600,
-                }}>
+                <span style={{ fontSize: 12, color: T.textDim }}>{e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""}</span>
+                <button onClick={function(ev) { ev.stopPropagation(); setViewingEvent(e); }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600 }}>Voir photos</button>
+                <button onClick={function(ev) { ev.stopPropagation(); if (window.confirm("Supprimer cet evenement et toutes ses photos ?")) { fetch(API + "/events/" + e.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } }).then(function(r) { if (r.ok) setEvents(function(prev) { return prev.filter(function(x) { return x.id !== e.id; }); }); }); } }} style={{ background: "rgba(239,68,68,0.08)", border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.red, display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}>
                   {Icon.Trash(12)} Supprimer
                 </button>
               </div>
@@ -874,7 +1007,7 @@ const [selfieLoading, setSelfieLoading] = useState(false);
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 640, height: 480 } });
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
-      alert("Impossible d'accéder Ã  la caméra.");
+      alert("Impossible d'accéder à la caméra.");
       setShowSelfie(false);
     }
   };
@@ -1040,11 +1173,6 @@ const handleFreeDownload = async () => {
         display: "flex", justifyContent: "space-between", alignItems: "center",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => onNavigate("dashboard")} style={{
-            background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 7,
-            width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center",
-            color: T.textMuted, cursor: "pointer", fontSize: 16,
-          }}>{"←"}</button>
           <div style={{
             width: 28, height: 28, borderRadius: 7, background: T.accent,
             display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
@@ -1074,7 +1202,7 @@ const handleFreeDownload = async () => {
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: T.card, borderRadius: T.radius, padding: 28, maxWidth: 380, width: "100%" }}>
             <h3 style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Paiement Mobile Money</h3>
-            <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 20 }}>{selectedPhotos.length} photo(s) â€” {fcfa(getPrice())}</p>
+            <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 20 }}>{selectedPhotos.length} photo(s) - {fcfa(getPrice())}</p>
             <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
               {[{id: "orange", label: "Orange Money"}, {id: "mtn", label: "MTN MoMo"}, {id: "wave", label: "Wave"}].map(function(p) {
                 return (
@@ -1137,6 +1265,19 @@ const handleFreeDownload = async () => {
                 {event?.date && new Date(event.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                 {event?.location && ` · ${event.location}`}
               </p>
+              {event?.photographer_name && (
+                <div style={{ marginTop: 12, display: "flex", alignItems: "center", gap: 12, background: T.card, borderRadius: T.radiusSm, padding: "10px 14px", border: "1px solid " + T.border }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: T.accentDim, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{event.photographer_name.charAt(0)}</div>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{event.photographer_name}</div>
+                    {event.photographer_phone && (
+                      <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: T.accent, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
+                        {Icon.Phone(12)} Contacter sur WhatsApp
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {photos.length === 0 ? (
@@ -1235,24 +1376,90 @@ const handleFreeDownload = async () => {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  APP ROUTER
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+function QrPhotoPage({ qrCode, onNavigate }) {
+  const [photo, setPhoto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(function() {
+    fetch(API + "/photos/qr/" + qrCode)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.photo) setPhoto(d.photo);
+        else setError("Photo introuvable.");
+        setLoading(false);
+      })
+      .catch(function() { setError("Erreur de connexion."); setLoading(false); });
+  }, []);
+
+  var downloadPhoto = function() {
+    if (!photo) return;
+    fetch(photo.original_url || photo.watermarked_url)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "fotokash-" + photo.qr_code_id + ".jpg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      });
+  };
+
+  if (loading) return (
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", color: T.textMuted }}>Chargement...</div>
+  );
+
+  if (error || !photo) return (
+    <div style={{ minHeight: "100vh", background: T.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: T.textMuted, gap: 16 }}>
+      <p>{error || "Photo introuvable."}</p>
+      <Btn onClick={function() { onNavigate("landing"); }}>Retour</Btn>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.bg, padding: 24 }}>
+      <header style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>{Icon.Camera(14)}</div>
+        <span style={{ fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 700 }}>Foto<span style={{ color: T.accent }}>Kash</span></span>
+      </header>
+      <div style={{ maxWidth: 500, margin: "0 auto", textAlign: "center" }}>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 700, marginBottom: 8 }}>{photo.event_name || "Photo FotoKash"}</h2>
+        <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 20 }}>Code: {photo.qr_code_id}</p>
+        <div style={{ borderRadius: 14, overflow: "hidden", marginBottom: 20 }}>
+          <img src={photo.watermarked_url || photo.thumbnail_url} alt="" style={{ width: "100%", display: "block" }} />
+        </div>
+        <Btn onClick={downloadPhoto} style={{ width: "100%", justifyContent: "center", padding: "14px 0", background: T.green }}>
+          Telecharger en HD
+        </Btn>
+      </div>
+    </div>
+  );
+}
+
 export default function FotoKashApp() {
-  const [screen, setScreen] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return "client"; return "landing"; });
-  const [screenProps, setScreenProps] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return { slug: p.replace("/e/", "") }; return {}; });
+  const [screen, setScreen] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return "client";
+    if (p.startsWith("/p/")) return "qr-photo"; return "landing"; });
+  const [screenProps, setScreenProps] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return { slug: p.replace("/e/", "") };
+    if (p.startsWith("/p/")) return { qrCode: p.replace("/p/", "") }; return {}; });
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("fotokash_token"));
+  const [platform, setPlatform] = useState({ name: "FotoKash", email: "contact@fotokash.com" });
+  useEffect(function() { fetch(API + "/photos/platform").then(function(r) { return r.json(); }).then(function(d) { setPlatform(d); }).catch(function() {}); }, []);
 
   // Auto-login if token exists
   useEffect(() => {
     var currentPath = window.location.pathname;
-    if (currentPath.startsWith("/e/")) {
-      // Page client - ne pas auto-login
-      return;
-    }
+    if (currentPath.startsWith("/e/")) return;
+    if (currentPath.startsWith("/p/")) return;
     if (token && !user) {
-      fetch(API + "/auth/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then((r) => r.ok ? r.json() : Promise.reject())
-        .then((d) => { var u = d.user || d.photographer || d; setUser(u); setScreen(u.role === "admin" ? "admin" : "dashboard"); })
-        .catch(() => { localStorage.removeItem("fotokash_token"); setToken(null); });
+      fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + token } })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+        .then(function(d) { var u = d.user || d.photographer || d; setUser(u); setScreen(u.role === "admin" ? "admin" : "dashboard"); })
+        .catch(function() { localStorage.removeItem("fotokash_token"); setToken(null); });
     }
   }, [token]);
 
@@ -1266,11 +1473,12 @@ export default function FotoKashApp() {
   return (
     <>
       <style>{globalCSS}</style>
-      {screen === "landing" && <LandingPage onNavigate={navigate} />}
+      {screen === "landing" && <LandingPage onNavigate={navigate} platform={platform} />}
       {screen === "auth" && <AuthScreen mode={screenProps.mode} onNavigate={navigate} onAuth={handleAuth} />}
       {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
+      {screen === "qr-photo" && <QrPhotoPage qrCode={screenProps.qrCode} onNavigate={navigate} />}
     </>
   );
 }

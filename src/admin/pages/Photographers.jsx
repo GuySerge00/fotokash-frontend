@@ -263,48 +263,14 @@ const Photographers = ({ token }) => {
 
                 {/* Actions */}
                 <div className="detail-actions">
-                  <button
-                    className={`action-btn ${detail.photographer.status === 'active' ? 'deactivate' : 'activate'}`}
-                    onClick={() => toggleStatus(detail.photographer.id, detail.photographer.status)}
-                  >
-                    {detail.photographer.status === 'active' ? '⏸ Désactiver le compte' : '▶ Activer le compte'}
+                  <button className="action-btn activate" onClick={async () => { if (window.confirm("Reinitialiser le mot de passe ?")) { try { const res = await fetch(API_URL + "/admin/photographers/" + detail.photographer.id + "/password", { method: "PATCH", headers }); const data = await res.json(); if (res.ok) alert("Nouveau mot de passe : " + data.defaultPassword); } catch(e){console.error(e)} } }}>
+                    Reinitialiser le mot de passe
                   </button>
-<button
-                    className="action-btn deactivate"
-                    onClick={async () => {
-<button
-                    className="action-btn activate"
-                    onClick={async () => {
-                      if (window.confirm('Reinitialiser le mot de passe de "' + detail.photographer.studioName + '" ?')) {
-                        try {
-                          const res = await fetch(API_URL + '/admin/photographers/' + detail.photographer.id + '/password', {
-                            method: 'PATCH', headers
-                          });
-                          const data = await res.json();
-                          if (res.ok) {
-                            alert('Mot de passe reinitialise !\nNouveau mot de passe : ' + data.defaultPassword);
-                          }
-                        } catch (err) { console.error(err); }
-                      }
-                    }}
-                  >
-                    🔑 Reinitialiser le mot de passe
-                  </button>                      
-if (window.confirm(`ATTENTION : Supprimer définitivement "${detail.photographer.studioName}" et toutes ses données (photos, événements, transactions) ? Cette action est IRRÉVERSIBLE.`)) {
-                        try {
-                          const res = await fetch(`${API_URL}/admin/photographers/${detail.photographer.id}`, {
-                            method: 'DELETE', headers
-                          });
-                          if (res.ok) {
-                            setPhotographers(prev => prev.filter(p => p.id !== detail.photographer.id));
-                            setSelected(null);
-                            setDetail(null);
-                          }
-                        } catch (err) { console.error(err); }
-                      }
-                    }}
-                  >
-                    🗑 Supprimer définitivement
+                  <button className={"action-btn " + (detail.photographer.status === "active" ? "deactivate" : "activate")} onClick={() => toggleStatus(detail.photographer.id, detail.photographer.status)}>
+                    {detail.photographer.status === "active" ? "Desactiver le compte" : "Activer le compte"}
+                  </button>
+                  <button className="action-btn deactivate" onClick={async () => { if (window.confirm("Supprimer definitivement ce compte ?")) { try { const res = await fetch(API_URL + "/admin/photographers/" + detail.photographer.id, { method: "DELETE", headers }); if (res.ok) { setPhotographers(function(prev){return prev.filter(function(x){return x.id !== detail.photographer.id})}); setSelected(null); setDetail(null); } } catch(e){console.error(e)} } }}>
+                    Supprimer definitivement
                   </button>
                   <button className="action-btn close" onClick={() => { setSelected(null); setDetail(null); }}>
                     Fermer
