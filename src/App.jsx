@@ -1236,13 +1236,18 @@ const handleFreeDownload = async () => {
 //  APP ROUTER
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 export default function FotoKashApp() {
-  const [screen, setScreen] = useState("landing");
-  const [screenProps, setScreenProps] = useState({});
+  const [screen, setScreen] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return "client"; return "landing"; });
+  const [screenProps, setScreenProps] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return { slug: p.replace("/e/", "") }; return {}; });
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("fotokash_token"));
 
   // Auto-login if token exists
   useEffect(() => {
+    var currentPath = window.location.pathname;
+    if (currentPath.startsWith("/e/")) {
+      // Page client - ne pas auto-login
+      return;
+    }
     if (token && !user) {
       fetch(API + "/auth/me", { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.ok ? r.json() : Promise.reject())

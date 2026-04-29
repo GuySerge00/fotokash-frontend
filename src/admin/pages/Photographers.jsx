@@ -272,7 +272,25 @@ const Photographers = ({ token }) => {
 <button
                     className="action-btn deactivate"
                     onClick={async () => {
-                      if (window.confirm(`ATTENTION : Supprimer définitivement "${detail.photographer.studioName}" et toutes ses données (photos, événements, transactions) ? Cette action est IRRÉVERSIBLE.`)) {
+<button
+                    className="action-btn activate"
+                    onClick={async () => {
+                      if (window.confirm('Reinitialiser le mot de passe de "' + detail.photographer.studioName + '" ?')) {
+                        try {
+                          const res = await fetch(API_URL + '/admin/photographers/' + detail.photographer.id + '/password', {
+                            method: 'PATCH', headers
+                          });
+                          const data = await res.json();
+                          if (res.ok) {
+                            alert('Mot de passe reinitialise !\nNouveau mot de passe : ' + data.defaultPassword);
+                          }
+                        } catch (err) { console.error(err); }
+                      }
+                    }}
+                  >
+                    🔑 Reinitialiser le mot de passe
+                  </button>                      
+if (window.confirm(`ATTENTION : Supprimer définitivement "${detail.photographer.studioName}" et toutes ses données (photos, événements, transactions) ? Cette action est IRRÉVERSIBLE.`)) {
                         try {
                           const res = await fetch(`${API_URL}/admin/photographers/${detail.photographer.id}`, {
                             method: 'DELETE', headers
