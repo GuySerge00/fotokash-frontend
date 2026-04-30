@@ -45,7 +45,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
   useEffect(() => {
     fetch(API + "/live/" + slug)
       .then((r) => r.json())
-      .then((d) => { setEvent(d.event || null); setLoading(false); })
+      .then((d) => { var evt = d.event || null; setEvent(evt); if (evt) setMobileMoneyEnabled(evt.mobile_money_enabled || false); setLoading(false); })
       .catch(() => setLoading(false));
     fetch(API + "/photos/pricing").then(r => r.json()).then(d => setPricing(d)).catch(() => {});
   }, [slug]);
