@@ -1,4 +1,5 @@
 import AdminLayout from "./admin/AdminLayout";
+import LiveEventPage from "./LiveEventPage";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -474,7 +475,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
 
   // Fetch events
   useEffect(() => {
-    if (tab === "events" || tab === "photos") {
+    if (tab === "events" || tab === "photos" || tab === "live") {
       setLoadingEvents(true);
       fetch(API + "/events", { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
@@ -488,6 +489,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
     { id: "stats", label: "Statistiques", icon: Icon.BarChart(16) },
     { id: "photos", label: "Photos", icon: Icon.Image(16) },
     { id: "events", label: "Événements", icon: Icon.Calendar(16) },
+    { id: "live", label: "Live", icon: Icon.Phone(16) },
       { id: "account", label: "Mon compte", icon: Icon.Users(16) },
   ];
 
@@ -545,7 +547,8 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
       <div style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
         {tab === "stats" && <StatsTab token={token} />}
         {tab === "photos" && <PhotosTab token={token} events={events} />}
-	{tab === "events" && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
+	{tab === "live" && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
+        {tab === "events" && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
         {tab === "account" && <AccountTab token={token} />}      </div>
     </div>
   );
@@ -883,6 +886,46 @@ function EventPhotosViewer({ eventId, eventName, token, onClose }) {
   );
 }
 
+// --- Live Tab (dashboard photographe) ---
+function LiveTab({ token, events, onNavigate, setEvents }) {
+  const [liveEvent, setLiveEvent] = useState(null);
+  const [dashData, setDashData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const pollRef = useRef(null);
+  useEffect(() => { if (events.length === 0) return; const live = events.find(e => e.is_live); setLiveEvent(live || null); setLoading(false); }, [events]);
+  useEffect(() => {
+    if (!liveEvent) return;
+    const fetchDash = () => { fetch(API + "/live/" + liveEvent.id + "/dashboard", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()).then(d => setDashData(d)).catch(() => {}); };
+    fetchDash();
+    pollRef.current = setInterval(fetchDash, 10000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [liveEvent, token]);
+  const stopLive = () => { if (!liveEvent) return; fetch(API + "/live/" + liveEvent.id + "/stop", { method: "POST", headers: { Authorization: "Bearer " + token } }).then(r => r.json()).then(d => { if (d.event) setEvents(prev => prev.map(x => x.id === liveEvent.id ? { ...x, is_live: false } : x)); }); };
+  const timeAgo = (date) => { const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000); if (diff < 60) return "Il y a " + diff + "s"; if (diff < 3600) return "Il y a " + Math.floor(diff / 60) + " min"; return "Il y a " + Math.floor(diff / 3600) + "h"; };
+  if (loading) return <p style={{ color: T.textMuted, textAlign: "center", padding: 40 }}>Chargement...</p>;
+  if (!liveEvent) return (<div style={{ textAlign: "center", padding: "60px 24px" }}><div style={{ color: T.textMuted, marginBottom: 12 }}>{Icon.Phone(32)}</div><h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Aucun evenement en direct</h2><p style={{ color: T.textMuted, fontSize: 14 }}>Activez le mode live sur un evenement depuis l onglet Evenements</p></div>);
+  const stats = dashData?.stats || { photos_count: 0, visitors_count: 0, matches_count: 0, purchases_count: 0 };
+  const visitors = dashData?.visitors || [];
+  const liveUrl = "https://fotokash.com/live/" + liveEvent.slug;
+  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200\u0026data=" + encodeURIComponent(liveUrl);
+  return (<div>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+      <div><h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>{liveEvent.name}<span style={{ background: T.accent, color: "#fff", fontSize: 11, padding: "3px 10px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.font }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite", display: "inline-block" }}></span> En direct</span></h2><p style={{ color: T.textMuted, fontSize: 13, marginTop: 4 }}>Dashboard temps reel</p></div>
+      <Btn variant="ghost" onClick={stopLive} style={{ color: T.red, borderColor: "rgba(239,68,68,0.3)" }}>Arreter le live</Btn>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+      {[{ label: "Photos", value: stats.photos_count, icon: Icon.Image(18), color: T.accent },{ label: "Visiteurs", value: stats.visitors_count, icon: Icon.Users(18), color: T.gold },{ label: "Matches", value: stats.matches_count, icon: Icon.Search(18), color: T.green },{ label: "Achats", value: stats.purchases_count, icon: Icon.CreditCard(18), color: "#818CF8" }].map((s, i) => (<div key={i} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px 16px" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 10 }}><span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{s.label}</span><span style={{ color: s.color, opacity: 0.7 }}>{s.icon}</span></div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div></div>))}
+    </div>
+    <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+      <div style={{ background: "#fff", borderRadius: 10, padding: 10, flexShrink: 0 }}><img src={qrUrl} alt="QR Code" style={{ width: 100, height: 100, display: "block" }} /></div>
+      <div style={{ flex: 1, minWidth: 200 }}><p style={{ fontSize: 13, color: T.textMuted, marginBottom: 6 }}>Les invites scannent ce QR code pour retrouver leurs photos</p><p style={{ fontSize: 14, color: T.accent, fontWeight: 600, marginBottom: 10, wordBreak: "break-all" }}>{liveUrl}</p><div style={{ display: "flex", gap: 8 }}><Btn variant="dark" onClick={() => { navigator.clipboard.writeText(liveUrl); alert("Lien copie !"); }} style={{ padding: "6px 14px", fontSize: 12 }}>Copier le lien</Btn><Btn variant="dark" onClick={() => onNavigate("live", { slug: liveEvent.slug })} style={{ padding: "6px 14px", fontSize: 12 }}>Voir la page</Btn></div></div>
+    </div>
+    <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h3 style={{ fontSize: 15, fontWeight: 600 }}>Visiteurs en temps reel</h3><span style={{ fontSize: 11, color: T.textDim }}>Actualisation auto 10s</span></div>
+      {visitors.length === 0 ? (<p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: "24px 0" }}>Aucun visiteur pour le moment</p>) : (<div>{visitors.map((v, i) => (<div key={v.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < visitors.length - 1 ? "1px solid " + T.border : "none" }}><div style={{ width: 36, height: 36, borderRadius: "50%", background: T.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontSize: 13, fontWeight: 600 }}>{"#" + v.visitor_number}</div><div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{"Visiteur #" + v.visitor_number}</div><div style={{ fontSize: 11, color: T.textDim }}>{timeAgo(v.created_at)}</div></div><div style={{ background: "rgba(74,222,128,0.12)", color: T.green, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 12 }}>{v.matched_count + " photo" + (v.matched_count !== 1 ? "s" : "")}</div></div>))}</div>)}
+    </div>
+  </div>);
+}
 function EventsTab({ token, events, setEvents, loading, onNavigate }) {
   const [showForm, setShowForm] = useState(false);
   const [viewingEvent, setViewingEvent] = useState(null);
@@ -974,6 +1017,8 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 12, color: T.textDim }}>{e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""}</span>
+                <button onClick={function(ev) { ev.stopPropagation(); var action = e.is_live ? "stop" : "start"; fetch(API + "/live/" + e.id + "/" + action, { method: "POST", headers: { Authorization: "Bearer " + token } }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { is_live: d.event.is_live }) : x; }); }); }); }} style={{ background: e.is_live ? "rgba(74,222,128,0.15)" : "rgba(232,89,60,0.1)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: e.is_live ? T.green : T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font, display: "flex", alignItems: "center", gap: 4 }}>{e.is_live ? "\u25CF En direct" : "\u25B6 Activer Live"}</button>
+                {e.is_live && (<button onClick={function(ev) { ev.stopPropagation(); onNavigate("live", { slug: e.slug }); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: T.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Voir live</button>)}
                 <button onClick={function(ev) { ev.stopPropagation(); setViewingEvent(e); }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600 }}>Voir photos</button>
                 <button onClick={function(ev) { ev.stopPropagation(); if (window.confirm("Supprimer cet evenement et toutes ses photos ?")) { fetch(API + "/events/" + e.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } }).then(function(r) { if (r.ok) setEvents(function(prev) { return prev.filter(function(x) { return x.id !== e.id; }); }); }); } }} style={{ background: "rgba(239,68,68,0.08)", border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.red, display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}>
                   {Icon.Trash(12)} Supprimer
@@ -1450,11 +1495,20 @@ export default function FotoKashApp() {
   const [platform, setPlatform] = useState({ name: "FotoKash", email: "contact@fotokash.com" });
   useEffect(function() { fetch(API + "/photos/platform").then(function(r) { return r.json(); }).then(function(d) { setPlatform(d); }).catch(function() {}); }, []);
 
+  // Detecter les URLs publiques /live/
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.startsWith("/live/")) {
+      const slug = path.replace("/live/", "");
+      if (slug) { setScreen("live"); setScreenProps({ slug }); }
+    }
+  }, []);
   // Auto-login if token exists
   useEffect(() => {
     var currentPath = window.location.pathname;
     if (currentPath.startsWith("/e/")) return;
     if (currentPath.startsWith("/p/")) return;
+    if (currentPath.startsWith("/live/")) return;
     if (token && !user) {
       fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + token } })
         .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
@@ -1477,6 +1531,7 @@ export default function FotoKashApp() {
       {screen === "auth" && <AuthScreen mode={screenProps.mode} onNavigate={navigate} onAuth={handleAuth} />}
       {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
+      {screen === "live" && <LiveEventPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
       {screen === "qr-photo" && <QrPhotoPage qrCode={screenProps.qrCode} onNavigate={navigate} />}
     </>
