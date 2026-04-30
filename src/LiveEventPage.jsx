@@ -37,6 +37,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [paymentProvider, setPaymentProvider] = useState("orange");
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [mobileMoneyEnabled, setMobileMoneyEnabled] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const pollRef = useRef(null);
@@ -128,6 +129,27 @@ export default function LiveEventPage({ slug, onNavigate }) {
     return pricing.price10;
   };
 
+  const handleFreeDownload = async () => {
+    for (const photoId of selectedPhotos) {
+      const match = matches.find(m => m.id === photoId);
+      if (match && match.original_url) {
+        try {
+          const response = await fetch(match.original_url);
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "fotokash-" + photoId + ".jpg";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        } catch (err) { console.error("Erreur telechargement:", err); }
+      }
+    }
+    alert("Telechargement termine !");
+    setSelectedPhotos([]);
+  };
   const submitPayment = async () => {
     if (!phoneNumber || phoneNumber.length < 8) { alert("Numero invalide."); return; }
     setPaymentLoading(true);
@@ -266,9 +288,13 @@ export default function LiveEventPage({ slug, onNavigate }) {
               <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.card, borderTop: "1px solid " + T.border, padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 100 }}>
                 <div>
                   <span style={{ fontSize: 14, fontWeight: 600 }}>{selectedPhotos.length} photo{selectedPhotos.length > 1 ? "s" : ""}</span>
-                  <span style={{ color: T.accent, fontWeight: 700, marginLeft: 10, fontFamily: T.fontDisplay, fontSize: 18 }}>{fcfa(getPrice())}</span>
+                  {mobileMoneyEnabled && <span style={{ color: T.accent, fontWeight: 700, marginLeft: 10, fontFamily: T.fontDisplay, fontSize: 18 }}>{fcfa(getPrice())}</span>}
                 </div>
-                <button onClick={() => setShowPaymentModal(true)} style={{ background: T.accent, color: "#fff", border: "none", padding: "10px 24px", borderRadius: T.radiusSm, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Payer</button>
+                {mobileMoneyEnabled ? (
+                  <button onClick={() => setShowPaymentModal(true)} style={{ background: T.accent, color: "#fff", border: "none", padding: "10px 24px", borderRadius: T.radiusSm, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Payer</button>
+                ) : (
+                  <button onClick={handleFreeDownload} style={{ background: T.green, color: "#000", border: "none", padding: "10px 24px", borderRadius: T.radiusSm, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Telecharger en HD</button>
+                )}
               </div>
             )}
           </>
