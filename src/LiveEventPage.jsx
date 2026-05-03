@@ -217,6 +217,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M6 21v-1a6 6 0 0112 0v1"/></svg>
             </div>
             <button onClick={startCamera} style={{ background: T.accent, color: "#fff", border: "none", padding: "14px 32px", borderRadius: T.radiusSm, fontSize: 15, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: T.font }}>Prendre un selfie</button>
+            <p style={{ color: T.textDim, fontSize: 11, marginTop: 10, textAlign: "center" }}>Ton selfie est utilise uniquement pour retrouver tes photos et est supprime immediatement.</p>
             {event.is_live && (
               <p style={{ color: T.textDim, fontSize: 11, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.green, animation: "pulse 1.5s infinite", display: "inline-block" }}></span>
@@ -305,6 +306,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
             <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: T.textMuted, fontSize: 12, textDecoration: "underline" }}>
               Contacter le photographe via WhatsApp
             </a>
+          <p style={{ color: T.textDim, fontSize: 11, marginTop: 8, textAlign: "center", maxWidth: 400, margin: "8px auto 0" }}>Si vous souhaitez que votre image soit retiree de cette galerie, contactez rapidement le photographe via WhatsApp.</p>
           </div>
         )}
       </div>

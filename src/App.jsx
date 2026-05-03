@@ -918,7 +918,7 @@ function LiveTab({ token, events, onNavigate, setEvents }) {
     </div>
     <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
       <div style={{ background: "#fff", borderRadius: 10, padding: 10, flexShrink: 0 }}><img src={qrUrl} alt="QR Code" style={{ width: 100, height: 100, display: "block" }} /></div>
-      <div style={{ flex: 1, minWidth: 200 }}><p style={{ fontSize: 13, color: T.textMuted, marginBottom: 6 }}>Les invites scannent ce QR code pour retrouver leurs photos</p><p style={{ fontSize: 14, color: T.accent, fontWeight: 600, marginBottom: 10, wordBreak: "break-all" }}>{liveUrl}</p><div style={{ display: "flex", gap: 8 }}><Btn variant="dark" onClick={() => { navigator.clipboard.writeText(liveUrl); alert("Lien copie !"); }} style={{ padding: "6px 14px", fontSize: 12 }}>Copier le lien</Btn><Btn variant="dark" onClick={() => onNavigate("live", { slug: liveEvent.slug })} style={{ padding: "6px 14px", fontSize: 12 }}>Voir la page</Btn></div></div>
+      <div style={{ flex: 1, minWidth: 200 }}><p style={{ fontSize: 13, color: T.textMuted, marginBottom: 6 }}>Les invites scannent ce QR code pour retrouver leurs photos</p><p style={{ fontSize: 14, color: T.accent, fontWeight: 600, marginBottom: 10, wordBreak: "break-all" }}>{liveUrl}</p><div style={{ display: "flex", gap: 8 }}><Btn variant="dark" onClick={() => { navigator.clipboard.writeText(liveUrl); alert("Lien copie !"); }} style={{ padding: "6px 14px", fontSize: 12 }}>Copier le lien</Btn><Btn variant="dark" onClick={() => onNavigate("live", { slug: liveEvent.slug })} style={{ padding: "6px 14px", fontSize: 12 }}>Voir la page</Btn><Btn variant="dark" onClick={() => { const link = document.createElement("a"); link.href = qrUrl; link.download = "FotoKash-QR-" + liveEvent.slug + ".png"; link.click(); }} style={{ padding: "6px 14px", fontSize: 12 }}>Telecharger QR</Btn></div></div>
     </div>
     <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h3 style={{ fontSize: 15, fontWeight: 600 }}>Visiteurs en temps reel</h3><span style={{ fontSize: 11, color: T.textDim }}>Actualisation auto 10s</span></div>
@@ -1020,6 +1020,7 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
                 <button onClick={function(ev) { ev.stopPropagation(); var action = e.is_live ? "stop" : "start"; fetch(API + "/live/" + e.id + "/" + action, { method: "POST", headers: { Authorization: "Bearer " + token } }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { is_live: d.event.is_live }) : x; }); }); }); }} style={{ background: e.is_live ? "rgba(74,222,128,0.15)" : "rgba(232,89,60,0.1)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: e.is_live ? T.green : T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font, display: "flex", alignItems: "center", gap: 4 }}>{e.is_live ? "\u25CF En direct" : "\u25B6 Activer Live"}</button>
                 {e.is_live && (<button onClick={function(ev) { ev.stopPropagation(); onNavigate("live", { slug: e.slug }); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: T.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Voir live</button>)}
                 <button onClick={function(ev) { ev.stopPropagation(); setViewingEvent(e); }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600 }}>Voir photos</button>
+                <button onClick={function(ev) { ev.stopPropagation(); var newName = prompt("Nouveau nom de l evenement :", e.name); if (newName && newName.trim() && newName !== e.name) { fetch(API + "/events/" + e.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: newName.trim() }) }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { name: d.event.name }) : x; }); }); }); } }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Renommer</button>
                 <button onClick={function(ev) { ev.stopPropagation(); if (window.confirm("Supprimer cet evenement et toutes ses photos ?")) { fetch(API + "/events/" + e.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } }).then(function(r) { if (r.ok) setEvents(function(prev) { return prev.filter(function(x) { return x.id !== e.id; }); }); }); } }} style={{ background: "rgba(239,68,68,0.08)", border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.red, display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}>
                   {Icon.Trash(12)} Supprimer
                 </button>
@@ -1241,6 +1242,7 @@ const handleFreeDownload = async () => {
             </Btn>
             <Btn variant="ghost" onClick={stopCamera} style={{ padding: "12px 20px" }}>Annuler</Btn>
           </div>
+          <p style={{ color: T.textDim, fontSize: 11, marginTop: 10 }}>Ton selfie est utilise uniquement pour retrouver tes photos et est supprime immediatement.</p>
         </div>
       )}
 {showPaymentModal && (
@@ -1315,11 +1317,12 @@ const handleFreeDownload = async () => {
                   <div style={{ width: 36, height: 36, borderRadius: 8, background: T.accentDim, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 }}>{event.photographer_name.charAt(0)}</div>
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{event.photographer_name}</div>
-                    {event.photographer_phone && (
+                    {event.photographer_phone && (<>
                       <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: T.accent, textDecoration: "none", display: "flex", alignItems: "center", gap: 4 }}>
                         {Icon.Phone(12)} Contacter sur WhatsApp
                       </a>
-                    )}
+                      <p style={{ color: T.textDim, fontSize: 11, marginTop: 8 }}>Si vous souhaitez que votre image soit retiree de cette galerie, contactez rapidement le photographe via WhatsApp.</p>
+                    </>)}
                   </div>
                 </div>
               )}
