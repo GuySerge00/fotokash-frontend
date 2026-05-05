@@ -109,6 +109,29 @@ const Input = ({ label, ...props }) => (
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 //  SCREEN 1 â€” LANDING PAGE
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+function LandingStats() {
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    fetch(API + "/live/stats/global").then(r => r.json()).then(d => setStats(d.stats)).catch(() => {});
+  }, []);
+  if (!stats) return null;
+  const items = [
+    { value: stats.photographers_count, label: "Photographes" },
+    { value: stats.events_count, label: "Evenements" },
+    { value: stats.photos_count, label: "Photos" },
+    { value: stats.visitors_count, label: "Invites satisfaits" },
+  ];
+  return (
+    <div style={{ padding: "40px 24px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "center", gap: 40, flexWrap: "wrap" }}>
+      {items.map((item, i) => (
+        <div key={i} style={{ textAlign: "center" }}>
+          <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, color: T.accent }}>{Number(item.value).toLocaleString("fr-FR")}+</div>
+          <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>{item.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 function LandingPage({ onNavigate, platform }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -198,6 +221,8 @@ function LandingPage({ onNavigate, platform }) {
         </div>
       </div>
 
+      {/* Compteurs de confiance */}
+      <LandingStats />
       {/* Pricing */}
       <div style={{
         padding: "60px 24px", borderTop: `1px solid ${T.border}`,
@@ -1044,6 +1069,7 @@ function ClientPage({ slug, onNavigate }) {
   const [showSelfie, setShowSelfie] = useState(false);
 const [selfieLoading, setSelfieLoading] = useState(false);
   const [matchedPhotos, setMatchedPhotos] = useState(null);
+  const [matchedIds, setMatchedIds] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
@@ -1081,7 +1107,7 @@ const [selfieLoading, setSelfieLoading] = useState(false);
         var res = await fetch(API + "/photos/face-search", { method: "POST", body: formData });
         var data = await res.json();
         if (res.ok && data.matched_photos && data.matched_photos.length > 0) {
-          setPhotos(data.matched_photos);
+          setMatchedIds(data.matched_photos.map(function(p) { return p.id; }));
           setMatchedPhotos(data.count);
         } else {
           alert(data.error || "Aucune photo trouvée avec votre visage. Essayez avec un meilleur éclairage.");
@@ -1119,6 +1145,7 @@ useEffect(() => {
   }, [slug]);
 
   const togglePhoto = (id) => {
+    if (matchedIds === null || !matchedIds.includes(id)) return;
     setSelectedPhotos((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
   };
 const [paymentLoading, setPaymentLoading] = useState(false);
@@ -1341,26 +1368,28 @@ const handleFreeDownload = async () => {
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <span style={{ fontSize: 13, color: T.textMuted }}>{photos.length} photo{photos.length > 1 ? "s" : ""} disponible{photos.length > 1 ? "s" : ""}</span>
                   <button onClick={() => {
-                    if (selectedPhotos.length === photos.length) {
+                    if (matchedIds === null) return;
+                    if (matchedIds !== null && selectedPhotos.length === matchedIds.length) {
                       setSelectedPhotos([]);
                     } else {
-                      setSelectedPhotos(photos.map(p => p.id));
+                      setSelectedPhotos([...matchedIds]);
                     }
                   }} style={{
                     background: selectedPhotos.length === photos.length ? T.accentDim : "rgba(255,255,255,0.06)",
                     border: selectedPhotos.length === photos.length ? `1px solid ${T.accent}` : `1px solid ${T.border}`,
                     borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600,
                     color: selectedPhotos.length === photos.length ? T.accent : T.textMuted,
-                    cursor: "pointer", fontFamily: T.font, display: "flex", alignItems: "center", gap: 6,
+                    cursor: matchedIds === null ? "default" : "pointer", fontFamily: T.font, display: "flex", alignItems: "center", gap: 6,
                   }}>
-                    {selectedPhotos.length === photos.length ? "✓ Tout désélectionner" : "☐ Sélectionner tout"}
+                    {matchedIds === null ? <><span style={{color:"#FFB826"}}>⚠</span> Prenez un selfie d'abord</> : selectedPhotos.length === matchedIds.length ? "✓ Tout désélectionner" : "☐ Sélectionner tout (" + matchedIds.length + ")"}
                   </button>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10, marginBottom: 24 }}>
-                  {photos.map((p) => (
+                  {[...photos].sort((a, b) => { if (matchedIds === null) return 0; const aMatch = matchedIds.includes(a.id) ? 0 : 1; const bMatch = matchedIds.includes(b.id) ? 0 : 1; return aMatch - bMatch; }).map((p) => (
                     <div key={p.id} onClick={() => togglePhoto(p.id)} style={{
                       position: "relative", borderRadius: T.radiusSm, overflow: "hidden",
-                      cursor: "pointer", aspectRatio: "1",
+                      cursor: matchedIds !== null && matchedIds.includes(p.id) ? "pointer" : "default", aspectRatio: "1",
+                      opacity: matchedIds !== null && !matchedIds.includes(p.id) ? 0.4 : 1,
                       border: `2px solid ${selectedPhotos.includes(p.id) ? T.accent : "transparent"}`,
                       transition: "border-color 0.2s",
                     }}>
@@ -1372,7 +1401,7 @@ const handleFreeDownload = async () => {
                           display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
                         }}>{Icon.Check(14)}</div>
                       )}
-			{p.qr_code_id && !mobileMoneyEnabled && (
+			{p.qr_code_id && !mobileMoneyEnabled && matchedIds !== null && matchedIds.includes(p.id) && (
                         <div onClick={(ev) => {
                           ev.stopPropagation();
                           setQrModal(p);
