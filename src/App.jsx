@@ -222,8 +222,7 @@ function LandingPage({ onNavigate, platform }) {
         </div>
       </div>
 
-      {/* Compteurs de confiance */}
-      <LandingStats />
+
       {/* Pricing */}
       <div style={{
         padding: "60px 24px", borderTop: `1px solid ${T.border}`,
