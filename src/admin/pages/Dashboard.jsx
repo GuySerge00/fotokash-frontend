@@ -83,17 +83,12 @@ const Dashboard = ({ token }) => {
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-        {globalStats && [
-          { label: "Photographes inscrits", value: globalStats.photographers_count, color: "#818CF8" },
-          { label: "Visiteurs total", value: globalStats.visitors_count, color: "#FFB826" },
-        ].map((s, i) => (
-          <div key={i} style={{ background: "#141419", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: s.color }}>{Number(s.value).toLocaleString("fr-FR")}</div>
-            <div style={{ fontSize: 12, color: "#8888A0" }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
+      {globalStats && (
+        <div style={{ background: "#141419", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", display: "inline-flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "#FFB826" }}>{Number(globalStats.visitors_count).toLocaleString("fr-FR")}</div>
+          <div style={{ fontSize: 12, color: "#8888A0" }}>Visiteurs total</div>
+        </div>
+      )}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-icon revenue-icon">$</div>

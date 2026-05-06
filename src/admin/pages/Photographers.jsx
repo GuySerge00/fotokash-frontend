@@ -228,6 +228,11 @@ const Photographers = ({ token }) => {
                           <span className="detail-event-date" style={{fontSize: 11, color: "#888"}}>Créé le {e.createdAt ? formatDate(e.createdAt) : '—'}</span>
                         </div>
                         <span className="detail-event-photos">{e.photoCount} photos</span>
+                        {e.daysRemaining !== null && e.daysRemaining <= 5 && (
+                          <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, marginLeft: 8, background: e.daysRemaining <= 3 ? "rgba(239,68,68,0.15)" : "rgba(255,184,38,0.15)", color: e.daysRemaining <= 3 ? "#EF4444" : "#FFB826" }}>
+                            {e.daysRemaining <= 0 ? "Expire" : e.daysRemaining <= 3 ? "Suppression dans " + e.daysRemaining + "j" : "Expire dans " + e.daysRemaining + "j"}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
