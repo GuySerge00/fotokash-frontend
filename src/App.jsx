@@ -1,5 +1,6 @@
 import AdminLayout from "./admin/AdminLayout";
 import LiveEventPage from "./LiveEventPage";
+import LegalPage from "./LegalPage";
 import { useState, useRef, useCallback, useEffect } from "react";
 
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -261,8 +262,11 @@ function LandingPage({ onNavigate, platform }) {
         display: "flex", justifyContent: "space-between", alignItems: "center",
         fontSize: 12, color: T.textDim,
       }}>
-        <span>{"© 2026 " + (platform ? platform.name : "FotoKash") + " · Abidjan, Côte d'Ivoire"}</span>
-        <span>{platform ? platform.email : "contact@fotokash.com"}</span>
+        <span>{"© 2026 FotoKash · Abidjan, Côte d'Ivoire"}</span>
+        <div style={{ display: "flex", gap: 16 }}>
+          <span onClick={() => onNavigate("legal", { tab: "cgu" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>CGU / CGV</span>
+          <span onClick={() => onNavigate("legal", { tab: "confidentialite" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Politique de confidentialité</span>
+        </div>
       </footer>
     </div>
   );
@@ -1041,7 +1045,7 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 12, color: T.textDim }}>{e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""}</span>
+                <span style={{ fontSize: 12, color: T.textDim }}>{e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""} · {e.photos_sold || 0} téléchargée{(e.photos_sold || 0) !== 1 ? "s" : ""}</span>
                 <button onClick={function(ev) { ev.stopPropagation(); var action = e.is_live ? "stop" : "start"; fetch(API + "/live/" + e.id + "/" + action, { method: "POST", headers: { Authorization: "Bearer " + token } }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { is_live: d.event.is_live }) : x; }); }); }); }} style={{ background: e.is_live ? "rgba(74,222,128,0.15)" : "rgba(232,89,60,0.1)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: e.is_live ? T.green : T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font, display: "flex", alignItems: "center", gap: 4 }}>{e.is_live ? "\u25CF En direct" : "\u25B6 Activer Live"}</button>
                 {e.is_live && (<button onClick={function(ev) { ev.stopPropagation(); onNavigate("live", { slug: e.slug }); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: T.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Voir live</button>)}
                 <button onClick={function(ev) { ev.stopPropagation(); setViewingEvent(e); }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600 }}>Voir photos</button>
@@ -1563,6 +1567,7 @@ export default function FotoKashApp() {
       {screen === "auth" && <AuthScreen mode={screenProps.mode} onNavigate={navigate} onAuth={handleAuth} />}
       {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
+      {screen === "legal" && <LegalPage tab={screenProps.tab} onNavigate={navigate} />}
       {screen === "live" && <LiveEventPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
       {screen === "qr-photo" && <QrPhotoPage qrCode={screenProps.qrCode} onNavigate={navigate} />}

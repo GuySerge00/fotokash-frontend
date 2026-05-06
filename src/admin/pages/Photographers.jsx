@@ -225,6 +225,7 @@ const Photographers = ({ token }) => {
                         <div>
                           <span className="detail-event-name">{e.name}</span>
                           <span className="detail-event-date">{e.date ? formatDate(e.date) : '—'}</span>
+                          <span className="detail-event-date" style={{fontSize: 11, color: "#888"}}>Créé le {e.createdAt ? formatDate(e.createdAt) : '—'}</span>
                         </div>
                         <span className="detail-event-photos">{e.photoCount} photos</span>
                       </div>
