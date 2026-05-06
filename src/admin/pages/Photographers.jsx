@@ -13,6 +13,8 @@ const Photographers = ({ token }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [adminGallery, setAdminGallery] = useState(null);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
 
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
@@ -228,6 +230,12 @@ const Photographers = ({ token }) => {
                           <span className="detail-event-date" style={{fontSize: 11, color: "#888"}}>Créé le {e.createdAt ? formatDate(e.createdAt) : '—'}</span>
                         </div>
                         <span className="detail-event-photos">{e.photoCount} photos</span>
+                        <button onClick={() => {
+                          fetch(API_URL + "/admin/events/" + e.id + "/photos", { headers: { Authorization: "Bearer " + token } })
+                            .then(r => r.json())
+                            .then(d => { setAdminGallery(d.event); setGalleryPhotos(d.photos || []); })
+                            .catch(() => {});
+                        }} style={{ background: "#E8593C22", border: "none", borderRadius: 6, padding: "2px 8px", cursor: "pointer", color: "#E8593C", fontSize: 10, fontWeight: 600, marginLeft: 6 }}>Voir photos</button>
                         {e.daysRemaining !== null && e.daysRemaining <= 5 && (
                           <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 6, marginLeft: 8, background: e.daysRemaining <= 3 ? "rgba(239,68,68,0.15)" : "rgba(255,184,38,0.15)", color: e.daysRemaining <= 3 ? "#EF4444" : "#FFB826" }}>
                             {e.daysRemaining <= 0 ? "Expire" : e.daysRemaining <= 3 ? "Suppression dans " + e.daysRemaining + "j" : "Expire dans " + e.daysRemaining + "j"}
@@ -238,6 +246,31 @@ const Photographers = ({ token }) => {
                   </div>
                 )}
 
+                {/* Galerie admin */}
+                {adminGallery && (
+                  <div style={{ marginTop: 20, marginBottom: 20 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                      <h3 className="detail-section-title" style={{ margin: 0 }}>Photos - {adminGallery.name}</h3>
+                      <button onClick={() => { setAdminGallery(null); setGalleryPhotos([]); }} style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: 12 }}>Fermer</button>
+                    </div>
+                    {galleryPhotos.length === 0 ? (
+                      <p style={{ color: "#888", fontSize: 13 }}>Aucune photo</p>
+                    ) : (
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 8 }}>
+                        {galleryPhotos.map(p => (
+                          <div key={p.id} style={{ position: "relative", borderRadius: 8, overflow: "hidden", aspectRatio: "1", background: "#1a1a22" }}>
+                            <img src={p.thumbnail_url || p.watermarked_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            <a href={p.original_url} download={"fotokash-" + p.id + ".jpg"} target="_blank" rel="noopener noreferrer"
+                              onClick={(ev) => ev.stopPropagation()}
+                              style={{ position: "absolute", bottom: 4, right: 4, background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "3px 8px", color: "#fff", fontSize: 10, textDecoration: "none", fontWeight: 600 }}>
+                              HD
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {/* Changer le plan */}
                 <div className="detail-plan-change">
                   <h3 className="detail-section-title">Changer le plan</h3>
