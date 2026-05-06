@@ -13,6 +13,15 @@ const Photographers = ({ token }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selected, setSelected] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
   const [adminGallery, setAdminGallery] = useState(null);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -176,6 +185,60 @@ const Photographers = ({ token }) => {
                   <div className="detail-avatar">{detail.photographer.studioName.charAt(0).toUpperCase()}</div>
                   <h2 className="detail-name">{detail.photographer.studioName}</h2>
                   <p className="detail-email">{detail.photographer.email}</p>
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <button onClick={() => { setShowEditForm(!showEditForm); if (!showEditForm) { setEditName(detail.photographer.studioName || ""); setEditEmail(detail.photographer.email || ""); setEditPhone(detail.photographer.phone || ""); } setShowEmailForm(false); }} style={{ background: "rgba(129,140,248,0.12)", border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", color: "#818CF8", fontSize: 12, fontWeight: 600 }}>
+                    {showEditForm ? "Annuler" : "Modifier infos"}
+                  </button>
+                  <button onClick={() => { setShowEmailForm(!showEmailForm); setShowEditForm(false); }} style={{ background: "#E8593C22", border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer", color: "#E8593C", fontSize: 12, fontWeight: 600 }}>
+                    {showEmailForm ? "Annuler" : "Envoyer un email"}
+                  </button>
+                  </div>
+                  {showEditForm && (
+                    <div style={{ marginTop: 12, padding: 16, background: "#0B0B0F", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <label style={{ fontSize: 11, color: "#8888A0", display: "block", marginBottom: 4 }}>Nom / Studio</label>
+                      <input value={editName} onChange={(e) => setEditName(e.target.value)} style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#141419", color: "#F0F0F5", fontSize: 13, marginBottom: 10, boxSizing: "border-box" }} />
+                      <label style={{ fontSize: 11, color: "#8888A0", display: "block", marginBottom: 4 }}>Email</label>
+                      <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#141419", color: "#F0F0F5", fontSize: 13, marginBottom: 10, boxSizing: "border-box" }} />
+                      <label style={{ fontSize: 11, color: "#8888A0", display: "block", marginBottom: 4 }}>Telephone</label>
+                      <input value={editPhone} onChange={(e) => setEditPhone(e.target.value)} type="tel" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#141419", color: "#F0F0F5", fontSize: 13, marginBottom: 10, boxSizing: "border-box" }} />
+                      <button disabled={editSaving} onClick={() => {
+                        setEditSaving(true);
+                        fetch(API_URL + "/admin/photographers/" + detail.photographer.id + "/info", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                          body: JSON.stringify({ studio_name: editName, email: editEmail, phone: editPhone })
+                        }).then(r => r.json()).then(d => {
+                          if (d.photographer) {
+                            alert("Informations mises a jour !");
+                            setDetail(prev => ({ ...prev, photographer: { ...prev.photographer, studioName: d.photographer.studio_name, email: d.photographer.email, phone: d.photographer.phone } }));
+                            setShowEditForm(false);
+                            fetchPhotographers();
+                          } else { alert(d.error || "Erreur"); }
+                        }).catch(() => alert("Erreur connexion")).finally(() => setEditSaving(false));
+                      }} style={{ background: "#818CF8", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: editSaving ? 0.5 : 1 }}>
+                        {editSaving ? "Sauvegarde..." : "Sauvegarder"}
+                      </button>
+                    </div>
+                  )}
+                  {showEmailForm && (
+                    <div style={{ marginTop: 12, padding: 16, background: "#0B0B0F", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} placeholder="Sujet" style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#141419", color: "#F0F0F5", fontSize: 13, marginBottom: 8, boxSizing: "border-box" }} />
+                      <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)} placeholder="Message..." rows={4} style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "#141419", color: "#F0F0F5", fontSize: 13, marginBottom: 8, resize: "vertical", boxSizing: "border-box", fontFamily: "inherit" }} />
+                      <button disabled={emailSending || !emailSubject.trim() || !emailMessage.trim()} onClick={() => {
+                        setEmailSending(true);
+                        fetch(API_URL + "/admin/send-email", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+                          body: JSON.stringify({ photographer_id: detail.photographer.id, subject: emailSubject, message: emailMessage })
+                        }).then(r => r.json()).then(d => {
+                          if (d.message) { alert("Email envoye !"); setShowEmailForm(false); setEmailSubject(""); setEmailMessage(""); }
+                          else { alert(d.error || "Erreur envoi"); }
+                        }).catch(() => alert("Erreur connexion")).finally(() => setEmailSending(false));
+                      }} style={{ background: "#E8593C", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: emailSending ? 0.5 : 1 }}>
+                        {emailSending ? "Envoi..." : "Envoyer"}
+                      </button>
+                    </div>
+                  )}
                   {detail.photographer.phone && <p className="detail-phone">{detail.photographer.phone}</p>}
                   <span className={`photo-status-badge large ${detail.photographer.status}`}>
                     {detail.photographer.status === 'active' ? 'Actif' : 'Inactif'}
