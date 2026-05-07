@@ -20,6 +20,7 @@ const Dashboard = ({ token }) => {
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [globalStats, setGlobalStats] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const fetchDashboard = async () => {
     setLoading(true);
@@ -58,8 +59,8 @@ const Dashboard = ({ token }) => {
 
   useEffect(() => {
     fetchDashboard();
-    fetch(API_URL + "/live/stats/global").then(r => r.json()).then(d => setGlobalStats(d.stats)).catch(() => {});
-  }, [period]);
+    fetch(API_URL + '/live/stats/global').then(r => r.json()).then(d => setGlobalStats(d.stats)).catch(() => {});
+  }, [period, refreshKey]);
 
   const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1);
 
@@ -70,7 +71,15 @@ const Dashboard = ({ token }) => {
           <h1 className="dashboard-title">Dashboard</h1>
           <p className="dashboard-subtitle">Vue d'ensemble de FotoKash</p>
         </div>
-        <div className="period-selector">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => setRefreshKey(k => k + 1)}
+            style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '8px 14px', color: '#8888A0', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Actualiser
+          </button>
+          <div className="period-selector">
           {periods.map((p) => (
             <button
               key={p.key}
@@ -80,6 +89,7 @@ const Dashboard = ({ token }) => {
               {p.label}
             </button>
           ))}
+          </div>
         </div>
       </div>
 

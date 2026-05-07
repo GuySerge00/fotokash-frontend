@@ -709,47 +709,55 @@ function AccountTab({ token }) {
 function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab }) {
   const [user, setUser] = useState(initialUser);
   const [tab, setTab] = useState(initialTab || "stats");
+  const [inactiveMsg, setInactiveMsg] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
-// Recharger le profil à chaque visite pour synchro admin
+  // Recharger le profil à chaque visite pour synchro admin
   useEffect(() => {
     fetch(API + "/auth/me", { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
-        var u = d.user || d;
+        const u = d.user || d;
         setUser(u);
-        // Si le compte a été désactivé, déconnecter
         if (u.status === 'inactive') {
-          alert('Votre compte a été désactivé. Contactez l\'administrateur.');
-          onLogout();
+          setInactiveMsg(true);
+          setTimeout(() => onLogout(), 3500);
         }
       })
       .catch(() => {});
   }, [token]);
-  const [events, setEvents] = useState([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
 
-  // Fetch events
+  // Fetch events au montage (nécessaire pour badge live + tabs photos/events/live)
   useEffect(() => {
-    if (tab === "events" || tab === "photos" || tab === "live") {
-      setLoadingEvents(true);
-      fetch(API + "/events", { headers: { Authorization: `Bearer ${token}` } })
-        .then((r) => r.json())
-        .then((d) => setEvents(d.events || []))
-        .catch(() => {})
-        .finally(() => setLoadingEvents(false));
-    }
-  }, [tab, token]);
+    setLoadingEvents(true);
+    fetch(API + "/events", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => setEvents(d.events || []))
+      .catch(() => {})
+      .finally(() => setLoadingEvents(false));
+  }, [token]);
+
+  const liveCount = events.filter((e) => e.is_live).length;
 
   const tabs = [
-    { id: "stats", label: "Statistiques", icon: Icon.BarChart(16) },
-    { id: "photos", label: "Photos", icon: Icon.Image(16) },
-    { id: "events", label: "Événements", icon: Icon.Calendar(16) },
-    { id: "live", label: "Live", icon: Icon.Phone(16) },
-      { id: "account", label: "Mon compte", icon: Icon.Users(16) },
+    { id: "stats",   label: "Stats",       icon: Icon.BarChart(16) },
+    { id: "photos",  label: "Photos",      icon: Icon.Image(16) },
+    { id: "events",  label: "Événements",  icon: Icon.Calendar(16) },
+    { id: "live",    label: "Live",        icon: Icon.Phone(16), badge: liveCount },
+    { id: "account", label: "Compte",      icon: Icon.Users(16) },
   ];
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg }}>
+      {/* Bannière compte désactivé */}
+      {inactiveMsg && (
+        <div style={{ background: "rgba(239,68,68,0.12)", borderBottom: "1px solid rgba(239,68,68,0.3)", padding: "12px 28px", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: T.red, fontSize: 16 }}>⚠</span>
+          <span style={{ fontSize: 13, color: T.red, fontWeight: 600 }}>Votre compte a été désactivé. Déconnexion en cours...</span>
+        </div>
+      )}
+
       {/* Top bar */}
       <header style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
@@ -767,6 +775,12 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {liveCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, display: "inline-block", animation: "pulse 1.5s infinite" }} />
+              <span style={{ fontSize: 11, color: T.green, fontWeight: 600 }}>{liveCount} live actif{liveCount > 1 ? "s" : ""}</span>
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 13, color: T.textMuted }}>
               {user?.studio_name || user?.name || "Photographe"}
@@ -793,36 +807,47 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
       <div style={{
         display: "flex", gap: 4, padding: "12px 28px",
         borderBottom: `1px solid ${T.border}`, background: T.card,
+        overflowX: "auto",
       }}>
         {tabs.map((t) => (
           <button key={t.id} onClick={() => { setTab(t.id); onNavigate("dashboard", { tab: t.id }); }} style={{
-            display: "flex", alignItems: "center", gap: 6,
+            display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
             padding: "10px 18px", borderRadius: T.radiusSm, border: "none",
             background: tab === t.id ? T.accentDim : "transparent",
             color: tab === t.id ? T.accent : T.textMuted,
             fontSize: 13, fontWeight: 600, cursor: "pointer",
-            fontFamily: T.font, transition: "all 0.2s",
+            fontFamily: T.font, transition: "all 0.2s", position: "relative",
           }}>
             {t.icon} {t.label}
+            {t.badge > 0 && (
+              <span style={{
+                background: T.red, color: "#fff", fontSize: 9, fontWeight: 700,
+                width: 16, height: 16, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginLeft: 2,
+              }}>{t.badge}</span>
+            )}
           </button>
         ))}
       </div>
 
       {/* Content */}
       <div style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
-        {tab === "stats" && <StatsTab token={token} />}
-        {tab === "photos" && <PhotosTab token={token} events={events} />}
-	{tab === "live" && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
-        {tab === "events" && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
-        {tab === "account" && <AccountTab token={token} />}      </div>
+        {tab === "stats"   && <StatsTab token={token} user={user} onNavigate={(t) => { setTab(t); onNavigate("dashboard", { tab: t }); }} />}
+        {tab === "photos"  && <PhotosTab token={token} events={events} />}
+        {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
+        {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
+        {tab === "account" && <AccountTab token={token} />}
+      </div>
     </div>
   );
 }
 
-// â”€â”€â”€ Stats Tab â”€â”€â”€
-function StatsTab({ token }) {
+
+function StatsTab({ token, user, onNavigate }) {
   const [data, setData] = useState({ photos: 0, events: 0, sales: 0, clients: 0 });
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     setLoading(true);
@@ -831,28 +856,41 @@ function StatsTab({ token }) {
       fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
     ])
     .then(function([eventsData, meData]) {
-      var evts = eventsData.events || eventsData || [];
-      var totalPhotos = evts.reduce(function(sum, e) { return sum + (parseInt(e.photos_count) || 0); }, 0);
-      var user = meData.user || meData || {};
-      var totalRevenue = parseFloat(user.total_revenue) || 0;
-      var totalClients = parseInt(user.total_clients) || evts.reduce(function(sum, e) { return sum + (parseInt(e.photos_sold) || 0); }, 0);
+      const evts = eventsData.events || eventsData || [];
+      const totalPhotos = evts.reduce((sum, e) => sum + (parseInt(e.photos_count) || 0), 0);
+      const u = meData.user || meData || {};
+      const totalRevenue = parseFloat(u.total_revenue) || 0;
+      const totalClients = parseInt(u.total_clients) || evts.reduce((sum, e) => sum + (parseInt(e.photos_sold) || 0), 0);
       setData({ photos: totalPhotos, events: evts.length, sales: totalRevenue, clients: totalClients });
     })
-    .catch(function() {})
-    .finally(function() { setLoading(false); });
-  }, [token]);
+    .catch(() => {})
+    .finally(() => setLoading(false));
+  }, [token, refreshKey]);
+
+  const firstName = (user?.studio_name || user?.name || "").split(" ")[0] || "vous";
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const dateFormatted = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
 
   const stats = [
-    { label: "Photos téléchargées", value: String(data.photos), icon: Icon.Image(20), color: T.accent },
-    { label: "Événements", value: String(data.events), icon: Icon.Calendar(20), color: T.gold },
-    { label: "Revenus", value: fcfa(data.sales), icon: Icon.CreditCard(20), color: T.green },
-    { label: "Clients", value: String(data.clients), icon: Icon.Users(20), color: "#818CF8" },
+    { label: "Photos uploadées",  value: String(data.photos),   icon: Icon.Image(20),      color: T.accent },
+    { label: "Événements",        value: String(data.events),   icon: Icon.Calendar(20),   color: T.gold },
+    { label: "Revenus",           value: fcfa(data.sales),      icon: Icon.CreditCard(20), color: T.green },
+    { label: "Clients servis",    value: String(data.clients),  icon: Icon.Users(20),      color: "#818CF8" },
+  ];
+
+  const quickActions = [
+    { label: "Créer un événement", tab: "events" },
+    { label: "Uploader des photos", tab: "photos" },
+    { label: "Démarrer un live", tab: "live" },
   ];
 
   if (loading) {
     return (
       <div>
-        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, marginBottom: 24, fontWeight: 700 }}>Tableau de bord</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700 }}>Tableau de bord</h2>
+        </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
           {[0,1,2,3].map(i => (
             <div key={i} style={{ background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`, padding: "24px 20px" }}>
@@ -867,9 +905,40 @@ function StatsTab({ token }) {
 
   return (
     <div>
-      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, marginBottom: 24, fontWeight: 700 }}>
-        Tableau de bord
-      </h2>
+      {/* Greeting + refresh */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
+        <div>
+          <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, marginBottom: 4 }}>
+            Bonjour, {firstName} 👋
+          </h2>
+          <p style={{ color: T.textMuted, fontSize: 13 }}>{dateFormatted} · {data.events} événement{data.events !== 1 ? "s" : ""}</p>
+        </div>
+        <button
+          onClick={() => setRefreshKey(k => k + 1)}
+          style={{ background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "7px 14px", color: T.textMuted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "flex", alignItems: "center", gap: 6 }}
+        >
+          ↻ Actualiser
+        </button>
+      </div>
+
+      {/* Quick actions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 24 }}>
+        {quickActions.map((a) => (
+          <button key={a.tab} onClick={() => onNavigate(a.tab)} style={{
+            background: T.card, border: "1px solid " + T.border, borderRadius: T.radius,
+            padding: "14px 10px", textAlign: "center", cursor: "pointer",
+            fontFamily: T.font, fontSize: 12, fontWeight: 600, color: T.textMuted,
+            transition: "border-color 0.2s, color 0.2s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textMuted; }}
+          >
+            {a.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Stats grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
         {stats.map((s, i) => (
           <div key={i} style={{
@@ -899,45 +968,89 @@ function StatsTab({ token }) {
   );
 }
 
-// â”€â”€â”€ Photos Tab (avec upload intégré) â”€â”€â”€
+
 function PhotosTab({ token, events }) {
+  const MAX_FILE_SIZE = 25 * 1024 * 1024;
+  const MAX_FILES = 50;
+
   const [files, setFiles] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 });
+  const [oversizedWarning, setOversizedWarning] = useState([]);
+  const [limitWarning, setLimitWarning] = useState(false);
+  const [uploadSummary, setUploadSummary] = useState(null); // { count, eventName }
   const fileInputRef = useRef(null);
 
-  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 Mo
+  // Pré-sélection auto si 1 seul event ou 1 seul live
+  useEffect(() => {
+    if (events.length === 1) {
+      setSelectedEvent(String(events[0].id));
+    } else {
+      const liveEvents = events.filter((e) => e.is_live);
+      if (liveEvents.length === 1) setSelectedEvent(String(liveEvents[0].id));
+    }
+  }, [events]);
+
+  // Fix cleanup : dépendance sur files pour révoquer les URLs
+  useEffect(() => {
+    return () => { files.forEach((f) => URL.revokeObjectURL(f.preview)); };
+  }, [files]);
+
+  const [duplicateWarning, setDuplicateWarning] = useState([]);
+
   const processFiles = useCallback((newFiles) => {
     const imgs = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
-    const oversized = imgs.filter(f => f.size > MAX_FILE_SIZE);
+    const oversized = imgs.filter((f) => f.size > MAX_FILE_SIZE);
+    const valid = imgs.filter((f) => f.size <= MAX_FILE_SIZE);
+
+    // Avertissement fichiers trop lourds (UI, pas alert)
     if (oversized.length > 0) {
-      alert(`${oversized.length} fichier(s) ignoré(s) car trop lourds (max 25 Mo) : ${oversized.map(f => f.name).join(", ")}`);
+      setOversizedWarning(oversized.map((f) => f.name));
+      setTimeout(() => setOversizedWarning([]), 6000);
     }
-    const valid = imgs.filter(f => f.size <= MAX_FILE_SIZE);
-    const withPreviews = valid.map((file) => ({
-      id: crypto.randomUUID(), file, name: file.name, size: file.size,
-      preview: URL.createObjectURL(file), status: "pending", progress: 0,
-    }));
-    setFiles((prev) => [...prev, ...withPreviews]);
+
+    // Limite 50 photos + doublons
+    setFiles((prev) => {
+      // Détection doublons : même nom + même taille + même lastModified
+      const existingKeys = new Set(prev.map((x) => x.name + "_" + x.size + "_" + x.file.lastModified));
+      const dupes = valid.filter((f) => existingKeys.has(f.name + "_" + f.size + "_" + f.lastModified));
+      const unique = valid.filter((f) => !existingKeys.has(f.name + "_" + f.size + "_" + f.lastModified));
+
+      if (dupes.length > 0) {
+        setDuplicateWarning(dupes.map((f) => f.name));
+        setTimeout(() => setDuplicateWarning([]), 5000);
+      }
+
+      const remaining = MAX_FILES - prev.length;
+      if (remaining <= 0) { setLimitWarning(true); setTimeout(() => setLimitWarning(false), 4000); return prev; }
+      const allowed = unique.slice(0, remaining);
+      if (allowed.length < unique.length) { setLimitWarning(true); setTimeout(() => setLimitWarning(false), 4000); }
+      const withPreviews = allowed.map((file) => ({
+        id: crypto.randomUUID(), file, name: file.name, size: file.size,
+        preview: URL.createObjectURL(file), status: "pending", progress: 0,
+      }));
+      return [...prev, ...withPreviews];
+    });
   }, []);
 
   const handleDrop = useCallback((e) => { e.preventDefault(); setDragOver(false); processFiles(e.dataTransfer.files); }, [processFiles]);
-  const removeFile = (id) => { setFiles((prev) => { const f = prev.find((x) => x.id === id); if (f) URL.revokeObjectURL(f.preview); return prev.filter((x) => x.id !== id); }); };
+  const removeFile = (id) => {
+    setFiles((prev) => { const f = prev.find((x) => x.id === id); if (f) URL.revokeObjectURL(f.preview); return prev.filter((x) => x.id !== id); });
+  };
 
-  const handleUpload = async () => {
-    if (!selectedEvent || files.length === 0) return;
-    setUploading(true);
-    const pending = files.filter((f) => f.status === "pending" || f.status === "error");
+  const uploadBatch = async (pending) => {
+    const eventId = selectedEvent;
+    let doneCount = 0;
+    setUploadProgress({ done: 0, total: pending.length });
 
-    // Envoyer par lots de 5
     for (let i = 0; i < pending.length; i += 5) {
       const batch = pending.slice(i, i + 5);
       const formData = new FormData();
-      formData.append("event_id", selectedEvent);
+      formData.append("event_id", eventId);
       batch.forEach((f) => formData.append("photos", f.file));
 
-      // Set uploading status
       batch.forEach((f) => {
         setFiles((prev) => prev.map((x) => x.id === f.id ? { ...x, status: "uploading", progress: 30 } : x));
       });
@@ -948,11 +1061,11 @@ function PhotosTab({ token, events }) {
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
-
         if (res.ok) {
           batch.forEach((f) => {
             setFiles((prev) => prev.map((x) => x.id === f.id ? { ...x, status: "done", progress: 100 } : x));
           });
+          doneCount += batch.length;
         } else {
           throw new Error("Upload failed");
         }
@@ -961,15 +1074,45 @@ function PhotosTab({ token, events }) {
           setFiles((prev) => prev.map((x) => x.id === f.id ? { ...x, status: "error", progress: 0 } : x));
         });
       }
+      setUploadProgress({ done: doneCount, total: pending.length });
     }
+    return doneCount;
+  };
+
+  const handleUpload = async () => {
+    if (!selectedEvent || files.length === 0) return;
+    setUploading(true);
+    setUploadSummary(null);
+    const pending = files.filter((f) => f.status === "pending" || f.status === "error");
+    const doneCount = await uploadBatch(pending);
     setUploading(false);
+    // Résumé final
+    if (doneCount > 0) {
+      const ev = events.find((e) => String(e.id) === String(selectedEvent));
+      setUploadSummary({ count: doneCount, eventName: ev ? ev.name : "l'événement" });
+    }
+  };
+
+  const retryFile = async (fileItem) => {
+    if (!selectedEvent) return;
+    setFiles((prev) => prev.map((x) => x.id === fileItem.id ? { ...x, status: "uploading", progress: 30 } : x));
+    const formData = new FormData();
+    formData.append("event_id", selectedEvent);
+    formData.append("photos", fileItem.file);
+    try {
+      const res = await fetch(API + "/photos/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
+      if (res.ok) {
+        setFiles((prev) => prev.map((x) => x.id === fileItem.id ? { ...x, status: "done", progress: 100 } : x));
+      } else { throw new Error(); }
+    } catch {
+      setFiles((prev) => prev.map((x) => x.id === fileItem.id ? { ...x, status: "error", progress: 0 } : x));
+    }
   };
 
   const totalSize = files.reduce((a, f) => a + f.size, 0);
   const doneCount = files.filter((f) => f.status === "done").length;
   const pendingCount = files.filter((f) => f.status === "pending" || f.status === "error").length;
-
-  useEffect(() => { return () => files.forEach((f) => URL.revokeObjectURL(f.preview)); }, []);
+  const uploadPct = uploadProgress.total > 0 ? Math.round((uploadProgress.done / uploadProgress.total) * 100) : 0;
 
   return (
     <div>
@@ -982,27 +1125,55 @@ function PhotosTab({ token, events }) {
         </div>
         {files.length > 0 && (
           <div style={{ fontSize: 12, color: T.textMuted }}>
-            <strong style={{ color: T.text }}>{files.length}</strong> photo{files.length > 1 ? "s" : ""} · {formatSize(totalSize)}
+            <strong style={{ color: T.text }}>{files.length}</strong> / {MAX_FILES} · {formatSize(totalSize)}
             {doneCount > 0 && <span style={{ color: T.green }}> · {doneCount} envoyée{doneCount > 1 ? "s" : ""}</span>}
           </div>
         )}
       </div>
 
+      {/* Avertissement doublons */}
+      {duplicateWarning.length > 0 && (
+        <div style={{ background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)", borderRadius: T.radiusSm, padding: "10px 14px", marginBottom: 14, display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <span style={{ color: "#a78bfa", fontSize: 14, flexShrink: 0 }}>⊘</span>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: "#a78bfa", marginBottom: 2 }}>{duplicateWarning.length} doublon{duplicateWarning.length > 1 ? "s" : ""} ignoré{duplicateWarning.length > 1 ? "s" : ""}</p>
+            <p style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.4 }}>{duplicateWarning.slice(0, 3).join(", ")}{duplicateWarning.length > 3 ? ` +${duplicateWarning.length - 3} autres` : ""}</p>
+          </div>
+          <button onClick={() => setDuplicateWarning([])} style={{ marginLeft: "auto", background: "none", border: "none", color: T.textMuted, cursor: "pointer", fontSize: 14, flexShrink: 0 }}>✕</button>
+        </div>
+      )}
+
+      {/* Avertissement fichiers trop lourds */}
+      {oversizedWarning.length > 0 && (
+        <div style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: T.radiusSm, padding: "10px 14px", marginBottom: 14, display: "flex", gap: 8, alignItems: "flex-start" }}>
+          <span style={{ color: T.gold, fontSize: 14, flexShrink: 0 }}>⚠</span>
+          <div>
+            <p style={{ fontSize: 12, fontWeight: 600, color: T.gold, marginBottom: 2 }}>{oversizedWarning.length} fichier{oversizedWarning.length > 1 ? "s" : ""} ignoré{oversizedWarning.length > 1 ? "s" : ""} (max 25 Mo)</p>
+            <p style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.4 }}>{oversizedWarning.slice(0, 3).join(", ")}{oversizedWarning.length > 3 ? ` +${oversizedWarning.length - 3} autres` : ""}</p>
+          </div>
+          <button onClick={() => setOversizedWarning([])} style={{ marginLeft: "auto", background: "none", border: "none", color: T.textMuted, cursor: "pointer", fontSize: 14, flexShrink: 0 }}>✕</button>
+        </div>
+      )}
+
+      {/* Avertissement limite 50 */}
+      {limitWarning && (
+        <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: T.radiusSm, padding: "10px 14px", marginBottom: 14 }}>
+          <p style={{ fontSize: 12, color: T.red }}>⚠ Maximum {MAX_FILES} photos par envoi atteint. Supprimez des photos ou envoyez d'abord la sélection actuelle.</p>
+        </div>
+      )}
+
       {/* Event selector */}
-      <div style={{
-        background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`,
-        padding: "18px 22px", marginBottom: 18,
-      }}>
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "18px 22px", marginBottom: 18 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
           {Icon.Calendar(16)} Événement
         </div>
         <select value={selectedEvent} onChange={(e) => setSelectedEvent(e.target.value)} style={{
-          width: "100%", background: T.bg, border: `1px solid ${selectedEvent ? T.accent : T.border}`,
+          width: "100%", background: T.bg, border: "1px solid " + (selectedEvent ? T.accent : T.border),
           borderRadius: T.radiusSm, padding: "12px 16px", color: selectedEvent ? T.text : T.textMuted,
           fontSize: 14, outline: "none", cursor: "pointer", colorScheme: "dark",
         }}>
           <option value="">-- Sélectionner un événement --</option>
-          {events.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+          {events.map((e) => <option key={e.id} value={e.id}>{e.name}{e.is_live ? " 🔴" : ""}</option>)}
         </select>
         {events.length === 0 && (
           <p style={{ fontSize: 12, color: T.gold, marginTop: 8, display: "flex", alignItems: "center", gap: 6 }}>
@@ -1019,7 +1190,7 @@ function PhotosTab({ token, events }) {
         onClick={() => fileInputRef.current?.click()}
         style={{
           background: dragOver ? T.accentDim : T.card,
-          borderRadius: T.radius, border: `2px dashed ${dragOver ? T.accent : "rgba(255,255,255,0.1)"}`,
+          borderRadius: T.radius, border: "2px dashed " + (dragOver ? T.accent : "rgba(255,255,255,0.1)"),
           padding: "44px 24px", textAlign: "center", cursor: "pointer",
           transition: "all 0.3s", marginBottom: 18,
         }}
@@ -1029,7 +1200,7 @@ function PhotosTab({ token, events }) {
           {dragOver ? "Déposez vos photos ici" : "Glissez-déposez vos photos"}
         </p>
         <p style={{ fontSize: 12, color: T.textMuted }}>
-          ou <span style={{ color: T.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 }}>parcourir</span> · JPG, PNG, WebP · Max 25 Mo/photo · 50 max
+          ou <span style={{ color: T.accent, fontWeight: 600, textDecoration: "underline", textUnderlineOffset: 2 }}>parcourir</span> · JPG, PNG, WebP · Max 25 Mo/photo · {MAX_FILES} max
         </p>
         <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={(e) => { processFiles(e.target.files); e.target.value = ""; }} style={{ display: "none" }} />
       </div>
@@ -1041,7 +1212,7 @@ function PhotosTab({ token, events }) {
             <span style={{ fontSize: 13, fontWeight: 600 }}>Aperçu ({files.length})</span>
             <div style={{ display: "flex", gap: 8 }}>
               <Btn variant="ghost" onClick={() => setFiles((p) => p.filter((f) => f.status !== "done"))} style={{ padding: "5px 12px", fontSize: 11 }}>Retirer envoyées</Btn>
-              <button onClick={() => { files.forEach((f) => URL.revokeObjectURL(f.preview)); setFiles([]); }} style={{
+              <button onClick={() => { files.forEach((f) => URL.revokeObjectURL(f.preview)); setFiles([]); setUploadSummary(null); }} style={{
                 background: "rgba(239,68,68,0.1)", color: T.red, border: "none", borderRadius: 8,
                 padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer",
               }}>Tout supprimer</button>
@@ -1049,54 +1220,58 @@ function PhotosTab({ token, events }) {
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginBottom: 18 }}>
-            {files.map((f) => (
-              <div key={f.id} style={{
-                position: "relative", borderRadius: T.radiusSm, overflow: "hidden",
-                background: T.cardAlt, aspectRatio: "1",
-                border: `1px solid ${f.status === "error" ? "rgba(239,68,68,0.4)" : f.status === "done" ? "rgba(74,222,128,0.3)" : T.border}`,
-              }}>
-                <img src={f.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                {/* Watermark */}
-                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.1)", pointerEvents: "none" }}>
-                  <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700, letterSpacing: 2, transform: "rotate(-25deg)", textTransform: "uppercase" }}>FOTOKASH</span>
+            {files.map((f) => {
+              const ext = f.name.split(".").pop().toUpperCase().slice(0, 4);
+              return (
+                <div key={f.id} style={{
+                  position: "relative", borderRadius: T.radiusSm, overflow: "hidden",
+                  background: T.cardAlt, aspectRatio: "1",
+                  border: "1px solid " + (f.status === "error" ? "rgba(239,68,68,0.4)" : f.status === "done" ? "rgba(74,222,128,0.3)" : T.border),
+                }}>
+                  <img src={f.preview} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                  {/* Watermark */}
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.1)", pointerEvents: "none" }}>
+                    <span style={{ color: "rgba(255,255,255,0.3)", fontSize: 10, fontWeight: 700, letterSpacing: 2, transform: "rotate(-25deg)", textTransform: "uppercase" }}>FOTOKASH</span>
+                  </div>
+                  {/* Format badge */}
+                  <div style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.65)", borderRadius: 4, padding: "2px 5px", fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.8)", letterSpacing: 0.5 }}>{ext}</div>
+                  {/* Uploading spinner */}
+                  {f.status === "uploading" && (
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: T.accent, animation: "spin 0.7s linear infinite" }} />
+                      <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>Envoi...</span>
+                    </div>
+                  )}
+                  {/* Done check */}
+                  {f.status === "done" && (
+                    <div style={{ position: "absolute", top: 6, right: 6, background: T.green, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", color: "#000" }}>
+                      {Icon.Check(12)}
+                    </div>
+                  )}
+                  {/* Error + retry */}
+                  {f.status === "error" && (
+                    <div style={{ position: "absolute", inset: 0, background: "rgba(239,68,68,0.15)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <span style={{ background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "3px 7px", color: T.red, fontSize: 10, fontWeight: 600 }}>Erreur</span>
+                      <button onClick={() => retryFile(f)} style={{ background: T.accent, border: "none", borderRadius: 5, padding: "4px 10px", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Réessayer</button>
+                    </div>
+                  )}
+                  {/* Remove btn */}
+                  {f.status !== "uploading" && (
+                    <button onClick={() => removeFile(f.id)} style={{
+                      position: "absolute", top: f.status === "error" ? 4 : 4, right: 4, background: "rgba(0,0,0,0.6)",
+                      border: "none", borderRadius: "50%", width: 22, height: 22,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#fff", cursor: "pointer", opacity: 0.7,
+                    }}>{Icon.X(10)}</button>
+                  )}
+                  {/* File info */}
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.7))", padding: "16px 6px 6px" }}>
+                    <p style={{ fontSize: 9, color: "#fff", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
+                    <p style={{ fontSize: 8, color: "rgba(255,255,255,0.5)" }}>{formatSize(f.size)}</p>
+                  </div>
                 </div>
-                {/* Uploading spinner */}
-                {f.status === "uploading" && (
-                  <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", border: "3px solid rgba(255,255,255,0.1)", borderTopColor: T.accent, animation: "spin 0.7s linear infinite" }} />
-                    <span style={{ fontSize: 11, color: "#fff", fontWeight: 600 }}>Envoi...</span>
-                  </div>
-                )}
-                {/* Done check */}
-                {f.status === "done" && (
-                  <div style={{ position: "absolute", top: 6, right: 6, background: T.green, borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", color: "#000" }}>
-                    {Icon.Check(12)}
-                  </div>
-                )}
-                {/* Error badge */}
-                {f.status === "error" && (
-                  <div style={{ position: "absolute", inset: 0, background: "rgba(239,68,68,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "4px 8px", color: T.red, fontSize: 10, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
-                      {Icon.AlertCircle(10)} Erreur
-                    </span>
-                  </div>
-                )}
-                {/* Remove btn */}
-                {f.status !== "uploading" && (
-                  <button onClick={() => removeFile(f.id)} style={{
-                    position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)",
-                    border: "none", borderRadius: "50%", width: 22, height: 22,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#fff", cursor: "pointer", opacity: 0.7,
-                  }}>{Icon.X(10)}</button>
-                )}
-                {/* File info */}
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.7))", padding: "16px 6px 6px" }}>
-                  <p style={{ fontSize: 9, color: "#fff", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
-                  <p style={{ fontSize: 8, color: "rgba(255,255,255,0.5)" }}>{formatSize(f.size)}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {/* Add more tile */}
             <div onClick={() => fileInputRef.current?.click()} style={{
               borderRadius: T.radiusSm, border: "2px dashed rgba(255,255,255,0.1)",
@@ -1108,25 +1283,48 @@ function PhotosTab({ token, events }) {
             </div>
           </div>
 
+          {/* Résumé upload réussi */}
+          {uploadSummary && !uploading && (
+            <div style={{ background: "rgba(74,222,128,0.08)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: T.radiusSm, padding: "12px 16px", marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ color: T.green, fontSize: 18 }}>✓</span>
+              <p style={{ fontSize: 13, color: T.green }}>
+                <strong>{uploadSummary.count}</strong> photo{uploadSummary.count > 1 ? "s" : ""} ajoutée{uploadSummary.count > 1 ? "s" : ""} à <strong>{uploadSummary.eventName}</strong>
+              </p>
+            </div>
+          )}
+
           {/* Upload bar */}
           <div style={{
-            background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`,
-            padding: "18px 22px", display: "flex", alignItems: "center",
-            justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+            background: T.card, borderRadius: T.radius, border: "1px solid " + T.border,
+            padding: "18px 22px",
           }}>
-            <div>
-              {!selectedEvent && <p style={{ fontSize: 12, color: T.accent, display: "flex", alignItems: "center", gap: 6 }}>{Icon.AlertCircle(14)} Sélectionnez un événement</p>}
-              {selectedEvent && pendingCount > 0 && <p style={{ fontSize: 13, color: T.textMuted }}><strong style={{ color: T.text }}>{pendingCount}</strong> prête{pendingCount > 1 ? "s" : ""} · {formatSize(files.filter((f) => f.status === "pending").reduce((a, f) => a + f.size, 0))}</p>}
-              {selectedEvent && pendingCount === 0 && doneCount > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <p style={{ fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 6 }}>{Icon.Check(14)} Toutes envoyées !</p>
-                  <button onClick={() => { files.forEach(f => URL.revokeObjectURL(f.preview)); setFiles([]); setSelectedEvent(""); }} style={{ background: T.accentDim, border: "none", borderRadius: 8, padding: "5px 14px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Terminer & vider</button>
+            {/* Barre de progression globale */}
+            {uploading && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>
+                  <span>Envoi en cours...</span>
+                  <span style={{ color: T.accent, fontWeight: 600 }}>{uploadProgress.done} / {uploadProgress.total}</span>
                 </div>
-              )}
+                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: uploadPct + "%", background: T.accent, borderRadius: 3, transition: "width 0.4s ease" }} />
+                </div>
+              </div>
+            )}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+              <div>
+                {!selectedEvent && <p style={{ fontSize: 12, color: T.accent, display: "flex", alignItems: "center", gap: 6 }}>{Icon.AlertCircle(14)} Sélectionnez un événement</p>}
+                {selectedEvent && pendingCount > 0 && <p style={{ fontSize: 13, color: T.textMuted }}><strong style={{ color: T.text }}>{pendingCount}</strong> prête{pendingCount > 1 ? "s" : ""} · {formatSize(files.filter((f) => f.status === "pending").reduce((a, f) => a + f.size, 0))}</p>}
+                {selectedEvent && pendingCount === 0 && doneCount > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <p style={{ fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 6 }}>{Icon.Check(14)} Toutes envoyées !</p>
+                    <button onClick={() => { files.forEach((f) => URL.revokeObjectURL(f.preview)); setFiles([]); setSelectedEvent(""); setUploadSummary(null); }} style={{ background: T.accentDim, border: "none", borderRadius: 8, padding: "5px 14px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Terminer & vider</button>
+                  </div>
+                )}
+              </div>
+              <Btn onClick={handleUpload} disabled={!selectedEvent || pendingCount === 0 || uploading}>
+                {uploading ? <span>Envoi en cours...</span> : <span>{Icon.Upload(16)} Envoyer ({pendingCount})</span>}
+              </Btn>
             </div>
-            <Btn onClick={handleUpload} disabled={!selectedEvent || pendingCount === 0 || uploading}>
-              {uploading ? <span>Envoi...</span> : <span>{Icon.Upload(16)} Envoyer ({pendingCount})</span>}
-            </Btn>
           </div>
         </>
       )}
@@ -1134,7 +1332,6 @@ function PhotosTab({ token, events }) {
   );
 }
 
-// â”€â”€â”€ Events Tab â”€â”€â”€
 
 function EventPhotosViewer({ eventId, eventName, token, onClose }) {
   var photosState = useState([]);
@@ -1412,10 +1609,16 @@ function LiveTab({ token, events, onNavigate, setEvents }) {
 }
 
 function EventsTab({ token, events, setEvents, loading, onNavigate }) {
+  const today = new Date().toISOString().split('T')[0];
   const [showForm, setShowForm] = useState(false);
   const [viewingEvent, setViewingEvent] = useState(null);
-  const [form, setForm] = useState({ name: "", date: "", location: "", description: "" });
+  const [form, setForm] = useState({ name: "", date: today, location: "", description: "" });
   const [creating, setCreating] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(null);
+  const [renamingId, setRenamingId] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [copiedId, setCopiedId] = useState(null);
 
   const createEvent = async () => {
     if (!form.name.trim()) return;
@@ -1429,25 +1632,86 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
       const data = await res.json();
       if (res.ok) {
         setEvents((prev) => [data.event || data, ...prev]);
-        setForm({ name: "", date: "", location: "", description: "" });
+        setForm({ name: "", date: today, location: "", description: "" });
         setShowForm(false);
       }
     } catch {}
     setCreating(false);
   };
 
+  const toggleLive = (e) => {
+    const action = e.is_live ? "stop" : "start";
+    fetch(API + "/live/" + e.id + "/" + action, { method: "POST", headers: { Authorization: "Bearer " + token } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.event) setEvents((prev) => prev.map((x) => x.id === e.id ? { ...x, is_live: d.event.is_live } : x));
+      });
+  };
+
+  const copyLink = (e) => {
+    navigator.clipboard.writeText("https://fotokash.com/e/" + e.slug).then(() => {
+      setCopiedId(e.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+    setMenuOpen(null);
+  };
+
+  const startRename = (e) => {
+    setRenamingId(e.id);
+    setRenameValue(e.name);
+    setMenuOpen(null);
+  };
+
+  const submitRename = (e) => {
+    const newName = renameValue.trim();
+    if (!newName || newName === e.name) { setRenamingId(null); return; }
+    fetch(API + "/events/" + e.id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify({ name: newName }),
+    }).then((r) => r.json()).then((d) => {
+      if (d.event) setEvents((prev) => prev.map((x) => x.id === e.id ? { ...x, name: d.event.name } : x));
+    });
+    setRenamingId(null);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    fetch(API + "/events/" + deleteTarget.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } })
+      .then((r) => { if (r.ok) setEvents((prev) => prev.filter((x) => x.id !== deleteTarget.id)); });
+    setDeleteTarget(null);
+  };
+
+  const fmtRevenue = (v) => {
+    if (!v) return "0 F";
+    return new Intl.NumberFormat("fr-FR").format(v) + " F";
+  };
+
   return (
-    <div>
+    <div onClick={() => setMenuOpen(null)}>
+      {/* Modal suppression */}
+      {deleteTarget && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setDeleteTarget(null)}>
+          <div onClick={(ev) => ev.stopPropagation()} style={{ background: T.card, borderRadius: T.radius, padding: "28px 24px", maxWidth: 340, width: "100%", border: "1px solid " + T.border }}>
+            <h3 style={{ fontFamily: T.fontDisplay, fontSize: 17, fontWeight: 700, marginBottom: 8 }}>Supprimer l'événement ?</h3>
+            <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 24, lineHeight: 1.5 }}>
+              <strong style={{ color: T.text }}>{deleteTarget.name}</strong> et toutes ses photos seront supprimés définitivement.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Btn variant="ghost" onClick={() => setDeleteTarget(null)} style={{ flex: 1 }}>Annuler</Btn>
+              <button onClick={confirmDelete} style={{ flex: 1, background: T.red, color: "#fff", border: "none", padding: "10px 0", borderRadius: T.radiusSm, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700 }}>Mes événements</h2>
         <Btn onClick={() => setShowForm(!showForm)}>{Icon.Plus(16)} Nouvel événement</Btn>
       </div>
 
       {showForm && (
-        <div style={{
-          background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`,
-          padding: "24px", marginBottom: 20, animation: "slideDown 0.3s ease",
-        }}>
+        <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "24px", marginBottom: 20, animation: "slideDown 0.3s ease" }}>
           <Input label="Nom de l'événement" placeholder="Ex: Mariage Kouamé" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} style={{ colorScheme: "dark" }} />
@@ -1462,22 +1726,13 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
       )}
 
       {viewingEvent && (
-        <EventPhotosViewer
-          eventId={viewingEvent.id}
-          eventName={viewingEvent.name}
-          token={token}
-          onClose={function() { setViewingEvent(null); }}
-        />
+        <EventPhotosViewer eventId={viewingEvent.id} eventName={viewingEvent.name} token={token} onClose={() => setViewingEvent(null)} />
       )}
-
 
       {loading && <p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: 40 }}>Chargement...</p>}
 
       {!loading && events.length === 0 && (
-        <div style={{
-          background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`,
-          padding: "48px 24px", textAlign: "center",
-        }}>
+        <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "48px 24px", textAlign: "center" }}>
           <div style={{ color: T.textMuted, marginBottom: 12 }}>{Icon.Calendar(32)}</div>
           <p style={{ color: T.textMuted, fontSize: 14 }}>Aucun événement pour le moment</p>
           <p style={{ color: T.textDim, fontSize: 12, marginTop: 4 }}>Créez votre premier événement pour commencer</p>
@@ -1487,29 +1742,78 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
       {events.length > 0 && (
         <div style={{ display: "grid", gap: 12 }}>
           {events.map((e) => (
-            <div key={e.id} style={{
-              background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`,
-              padding: "20px 22px", display: "flex", justifyContent: "space-between",
-              alignItems: "center", transition: "border-color 0.2s",
-            }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{e.name}</div>
-                <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                  {e.date && <span>{new Date(e.date).toLocaleDateString("fr-FR")}</span>}
-                  {e.location && <span>{e.location}</span>}
-                  <span style={{ color: T.accent, cursor: "pointer", textDecoration: "underline" }} onClick={function(ev) { ev.stopPropagation(); navigator.clipboard.writeText("https://fotokash.com/e/" + e.slug).then(function() { alert("Lien copié !"); }); }}>Copier le lien</span>
-                  <a href={"https://fotokash.com/e/" + e.slug} target="_blank" rel="noopener noreferrer" style={{ color: T.textMuted, textDecoration: "none", fontSize: 12 }}>↗ Voir la page</a>
+            <div key={e.id} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + (e.is_live ? "rgba(74,222,128,0.35)" : T.border), padding: "18px 20px", transition: "border-color 0.2s" }} onClick={(ev) => ev.stopPropagation()}>
+
+              {/* Header : nom + badge live + menu ⋯ */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {renamingId === e.id ? (
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(ev) => setRenameValue(ev.target.value)}
+                        onKeyDown={(ev) => { if (ev.key === "Enter") submitRename(e); if (ev.key === "Escape") setRenamingId(null); }}
+                        style={{ flex: 1, background: T.cardAlt, border: "1px solid " + T.accent, borderRadius: T.radiusSm, padding: "5px 10px", color: T.text, fontSize: 14, fontWeight: 600, fontFamily: T.font, outline: "none" }}
+                      />
+                      <button onClick={() => submitRename(e)} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>OK</button>
+                      <button onClick={() => setRenamingId(null)} style={{ background: T.cardAlt, color: T.textMuted, border: "none", borderRadius: T.radiusSm, padding: "5px 10px", fontSize: 12, cursor: "pointer", fontFamily: T.font }}>✕</button>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, fontSize: 15 }}>{e.name}</span>
+                      {e.is_live && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(74,222,128,0.15)", color: T.green }}>● EN DIRECT</span>}
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    {e.date && <span>{new Date(e.date).toLocaleDateString("fr-FR")}</span>}
+                    {e.location && <span>{e.location}</span>}
+                  </div>
+                </div>
+
+                {/* Menu ⋯ */}
+                <div style={{ position: "relative", flexShrink: 0, marginLeft: 10 }} onClick={(ev) => ev.stopPropagation()}>
+                  <button onClick={() => setMenuOpen(menuOpen === e.id ? null : e.id)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid " + T.border, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: T.textMuted, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>⋯</button>
+                  {menuOpen === e.id && (
+                    <div style={{ position: "absolute", right: 0, top: 38, background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, zIndex: 200, minWidth: 170, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
+                      {[
+                        { label: copiedId === e.id ? "✓ Lien copié !" : "📋 Copier le lien", action: () => copyLink(e) },
+                        { label: "↗ Voir la page", action: () => { window.open("https://fotokash.com/e/" + e.slug, "_blank"); setMenuOpen(null); } },
+                        { label: "✏️ Renommer", action: () => startRename(e) },
+                        { label: "🗑 Supprimer", action: () => { setDeleteTarget(e); setMenuOpen(null); }, red: true },
+                      ].map((item, i) => (
+                        <button key={i} onClick={item.action} style={{ display: "block", width: "100%", padding: "10px 14px", background: "transparent", border: "none", textAlign: "left", fontSize: 13, cursor: "pointer", color: item.red ? T.red : T.text, fontFamily: T.font, borderTop: i > 0 ? "1px solid " + T.border : "none" }}>
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 12, color: T.textDim }}>{e.photos_count || 0} photo{(e.photos_count || 0) !== 1 ? "s" : ""} · {e.photos_sold || 0} téléchargée{(e.photos_sold || 0) !== 1 ? "s" : ""}</span>
-                <button onClick={function(ev) { ev.stopPropagation(); var action = e.is_live ? "stop" : "start"; fetch(API + "/live/" + e.id + "/" + action, { method: "POST", headers: { Authorization: "Bearer " + token } }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { is_live: d.event.is_live }) : x; }); }); }); }} style={{ background: e.is_live ? "rgba(74,222,128,0.15)" : "rgba(232,89,60,0.1)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: e.is_live ? T.green : T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font, display: "flex", alignItems: "center", gap: 4 }}>{e.is_live ? "\u25CF En direct" : "\u25B6 Activer Live"}</button>
-                {e.is_live && (<button onClick={function(ev) { ev.stopPropagation(); onNavigate("live", { slug: e.slug }); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "4px 10px", cursor: "pointer", color: T.textMuted, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Voir live</button>)}
-                <button onClick={function(ev) { ev.stopPropagation(); setViewingEvent(e); }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600 }}>Voir photos</button>
-                <button onClick={function(ev) { ev.stopPropagation(); var newName = prompt("Nouveau nom de l evenement :", e.name); if (newName && newName.trim() && newName !== e.name) { fetch(API + "/events/" + e.id, { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ name: newName.trim() }) }).then(function(r) { return r.json(); }).then(function(d) { if (d.event) setEvents(function(prev) { return prev.map(function(x) { return x.id === e.id ? Object.assign({}, x, { name: d.event.name }) : x; }); }); }); } }} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.accent, fontSize: 11, fontWeight: 600, fontFamily: T.font }}>Renommer</button>
-                <button onClick={function(ev) { ev.stopPropagation(); if (window.confirm("Supprimer cet evenement et toutes ses photos ?")) { fetch(API + "/events/" + e.id, { method: "DELETE", headers: { Authorization: "Bearer " + token } }).then(function(r) { if (r.ok) setEvents(function(prev) { return prev.filter(function(x) { return x.id !== e.id; }); }); }); } }} style={{ background: "rgba(239,68,68,0.08)", border: "none", borderRadius: 6, padding: "4px 8px", cursor: "pointer", color: T.red, display: "flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600 }}>
-                  {Icon.Trash(12)} Supprimer
+
+              {/* Stats : photos / vendues / revenus */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+                {[
+                  { n: e.photos_count || 0, l: "photos" },
+                  { n: e.photos_sold || 0, l: "vendues" },
+                  { n: fmtRevenue(e.total_revenue), l: "revenus" },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: T.cardAlt, borderRadius: T.radiusSm, padding: "8px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{s.n}</div>
+                    <div style={{ fontSize: 10, color: T.textDim, marginTop: 2 }}>{s.l}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Boutons d'action principaux */}
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={() => setViewingEvent(e)} style={{ background: T.accentDim, border: "none", borderRadius: 6, padding: "7px 14px", cursor: "pointer", color: T.accent, fontSize: 12, fontWeight: 600, fontFamily: T.font }}>Voir photos</button>
+                <button onClick={() => toggleLive(e)} style={{ background: e.is_live ? "rgba(74,222,128,0.12)" : "rgba(232,89,60,0.1)", border: "none", borderRadius: 6, padding: "7px 14px", cursor: "pointer", color: e.is_live ? T.green : T.accent, fontSize: 12, fontWeight: 600, fontFamily: T.font }}>
+                  {e.is_live ? "⏹ Stop Live" : "▶ Activer Live"}
                 </button>
+                {e.is_live && (
+                  <button onClick={() => onNavigate("live", { slug: e.slug })} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "7px 14px", cursor: "pointer", color: T.textMuted, fontSize: 12, fontWeight: 600, fontFamily: T.font }}>Voir live ↗</button>
+                )}
               </div>
             </div>
           ))}
@@ -1519,9 +1823,6 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  SCREEN 4 â€” CLIENT EVENT PAGE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function ClientPage({ slug, onNavigate }) {
   const [event, setEvent] = useState(null);
   const [photos, setPhotos] = useState([]);
