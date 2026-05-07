@@ -255,6 +255,78 @@ function LandingPage({ onNavigate, platform }) {
         </div>
       </div>
 
+
+      {/* Témoignages */}
+      <div style={{
+        padding: "80px 24px", borderTop: `1px solid ${T.border}`,
+        textAlign: "center", background: T.bg,
+      }}>
+        <div style={{
+          color: T.accent, fontSize: 12, fontWeight: 700,
+          marginBottom: 16, letterSpacing: "0.1em", textTransform: "uppercase",
+        }}>
+          TÉMOIGNAGES
+        </div>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 700, marginBottom: 48, color: T.text }}>
+          Ils utilisent <span style={{ color: T.accent }}>FotoKash</span>
+        </h2>
+        <div style={{
+          display: "flex", gap: 20, justifyContent: "center", flexWrap: "wrap",
+          maxWidth: 960, margin: "0 auto",
+        }}>
+          {[
+            {
+              quote: "J'ai retrouvé toutes mes photos de mariage en 5 secondes. Incroyable !",
+              name: "Aya Kouamé",
+              role: "Mariée, Abidjan",
+              initials: "AK",
+            },
+            {
+              quote: "Mes clients récupèrent leurs photos sans que j'aie à les trier. Un gain de temps énorme.",
+              name: "Ibrahim Traoré",
+              role: "Photographe événementiel",
+              initials: "IT",
+            },
+            {
+              quote: "Le mode live a transformé nos événements. Les invités adorent voir leurs photos en direct.",
+              name: "Marie Bamba",
+              role: "Organisatrice événements",
+              initials: "MB",
+            },
+          ].map((t, i) => (
+            <div key={i} style={{
+              flex: "1 1 260px", maxWidth: 300,
+              background: T.card,
+              border: `1px solid ${T.border}`,
+              borderRadius: T.radius, padding: "28px 24px",
+              textAlign: "left",
+            }}>
+              <p style={{
+                color: T.textMuted, fontSize: 14, lineHeight: 1.7,
+                marginBottom: 24, fontStyle: "italic",
+              }}>
+                "{t.quote}"
+              </p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: T.accent,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 13, fontWeight: 700, color: "#fff",
+                  flexShrink: 0,
+                }}>
+                  {t.initials}
+                </div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: T.text }}>{t.name}</div>
+                  <div style={{ fontSize: 12, color: T.textMuted }}>{t.role}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Footer */}
       <footer style={{
         padding: "24px 32px", borderTop: `1px solid ${T.border}`,
@@ -276,11 +348,25 @@ function LandingPage({ onNavigate, platform }) {
 // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
   const [mode, setMode] = useState(initialMode || "login");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validate = () => {
+    const errs = {};
+    if (mode === "signup" && !form.name.trim()) errs.name = "Nom du studio requis";
+    if (!form.email.trim() || !/^[^@]+@[^@]+\.[^@]+$/.test(form.email)) errs.email = "Email invalide";
+    if (!form.password || form.password.length < 8) errs.password = "Minimum 8 caractères";
+    if (mode === "signup" && form.password !== form.confirm) errs.confirm = "Les mots de passe ne correspondent pas";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
 
   const handleSubmit = async () => {
+    if (!validate()) return;
     setError("");
     setLoading(true);
     try {
@@ -297,7 +383,6 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur");
 
-      // Si le compte est en attente d'activation
       if (data.pending) {
         setError("");
         alert(data.message);
@@ -313,6 +398,28 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
     }
   };
 
+  const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
+
+  const inputBase = {
+    width: "100%", padding: "11px 14px", borderRadius: T.radiusSm,
+    border: "1px solid " + T.border, background: T.bg, color: T.text,
+    fontSize: 14, outline: "none", boxSizing: "border-box", fontFamily: T.font,
+    transition: "border-color 0.2s",
+  };
+
+  const EyeIcon = ({ show }) => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {show
+        ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+        : <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+      }
+    </svg>
+  );
+
+  const FieldError = ({ msg }) => msg ? (
+    <div style={{ color: T.red, fontSize: 11, marginTop: 5, marginBottom: 4 }}>{msg}</div>
+  ) : null;
+
   return (
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
@@ -325,12 +432,9 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
         pointerEvents: "none",
       }} />
 
-      <div style={{
-        position: "relative", width: "100%", maxWidth: 400,
-        animation: "fadeUp 0.4s ease",
-      }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 400, animation: "fadeUp 0.4s ease" }}>
         {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 36, cursor: "pointer" }} onClick={() => onNavigate("landing")}>
+        <div style={{ textAlign: "center", marginBottom: 28, cursor: "pointer" }} onClick={() => onNavigate("landing")}>
           <div style={{
             width: 48, height: 48, borderRadius: 14, background: T.accent,
             display: "inline-flex", alignItems: "center", justifyContent: "center",
@@ -338,6 +442,9 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
           }}>{Icon.Camera(24)}</div>
           <div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 700 }}>
             Foto<span style={{ color: T.accent }}>Kash</span>
+          </div>
+          <div style={{ color: T.textMuted, fontSize: 12, marginTop: 4 }}>
+            La plateforme des photographes événementiels
           </div>
         </div>
 
@@ -352,7 +459,7 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
             padding: 3, marginBottom: 28,
           }}>
             {["login", "signup"].map((m) => (
-              <button key={m} onClick={() => { setMode(m); setError(""); }} style={{
+              <button key={m} onClick={() => { setMode(m); setError(""); setFieldErrors({}); }} style={{
                 flex: 1, padding: "10px 0", borderRadius: 8, border: "none",
                 background: mode === m ? T.cardAlt : "transparent",
                 color: mode === m ? T.text : T.textMuted,
@@ -364,19 +471,127 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
             ))}
           </div>
 
+          {/* Champs inscription */}
           {mode === "signup" && (
             <>
-              <Input label="Nom complet" placeholder="Ex: Kouamé Jean" value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <Input label="Téléphone" placeholder="+225 07 XX XX XX XX" value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6, fontWeight: 500 }}>
+                  Nom du studio <span style={{ color: T.red }}>*</span>
+                </label>
+                <input
+                  style={{ ...inputBase, borderColor: fieldErrors.name ? T.red : T.border }}
+                  placeholder="Ex: Studio Lumière CI"
+                  value={form.name}
+                  onChange={(e) => { setForm({ ...form, name: e.target.value }); setFieldErrors(p => ({ ...p, name: "" })); }}
+                  onKeyDown={handleKeyDown}
+                />
+                <FieldError msg={fieldErrors.name} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6, fontWeight: 500 }}>Téléphone</label>
+                <input
+                  style={inputBase}
+                  placeholder="+225 07 XX XX XX XX"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
             </>
           )}
-          <Input label="Email" type="email" placeholder="vous@email.com" value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <Input label="Mot de passe" type="password" placeholder="••••••••" value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })} />
 
+          {/* Email */}
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6, fontWeight: 500 }}>
+              Email <span style={{ color: T.red }}>*</span>
+            </label>
+            <input
+              type="email"
+              style={{ ...inputBase, borderColor: fieldErrors.email ? T.red : T.border }}
+              placeholder="vous@email.com"
+              value={form.email}
+              onChange={(e) => { setForm({ ...form, email: e.target.value }); setFieldErrors(p => ({ ...p, email: "" })); }}
+              onKeyDown={handleKeyDown}
+            />
+            <FieldError msg={fieldErrors.email} />
+          </div>
+
+          {/* Mot de passe */}
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label style={{ fontSize: 12, color: T.textMuted, fontWeight: 500 }}>
+                Mot de passe <span style={{ color: T.red }}>*</span>
+              </label>
+              {mode === "login" && (
+                <span style={{ fontSize: 11, color: T.accent, cursor: "pointer" }}
+                  onClick={() => alert("Contactez-nous sur WhatsApp pour réinitialiser votre mot de passe.")}>
+                  Mot de passe oublié ?
+                </span>
+              )}
+            </div>
+            <div style={{ position: "relative" }}>
+              <input
+                type={showPassword ? "text" : "password"}
+                style={{ ...inputBase, paddingRight: 42, borderColor: fieldErrors.password ? T.red : T.border }}
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => { setForm({ ...form, password: e.target.value }); setFieldErrors(p => ({ ...p, password: "" })); }}
+                onKeyDown={handleKeyDown}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex" }}
+              >
+                <EyeIcon show={showPassword} />
+              </button>
+            </div>
+            <FieldError msg={fieldErrors.password} />
+            {mode === "signup" && form.password.length > 0 && (
+              <div style={{ marginTop: 8, display: "flex", gap: 4 }}>
+                {[1,2,3,4].map(i => {
+                  const strength = form.password.length >= 12 ? 4 : form.password.length >= 10 ? 3 : form.password.length >= 8 ? 2 : 1;
+                  const colors = ["", T.red, "#F59E0B", "#3B82F6", T.green];
+                  return <div key={i} style={{ height: 3, flex: 1, borderRadius: 2, background: i <= strength ? colors[strength] : T.border, transition: "background 0.3s" }} />;
+                })}
+                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>
+                  {form.password.length < 8 ? "Trop court" : form.password.length < 10 ? "Correct" : form.password.length < 12 ? "Bien" : "Fort"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Confirmer mot de passe (signup only) */}
+          {mode === "signup" && (
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6, fontWeight: 500 }}>
+                Confirmer le mot de passe <span style={{ color: T.red }}>*</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  style={{ ...inputBase, paddingRight: 42, borderColor: fieldErrors.confirm ? T.red : form.confirm && form.confirm === form.password ? T.green : T.border }}
+                  placeholder="••••••••"
+                  value={form.confirm}
+                  onChange={(e) => { setForm({ ...form, confirm: e.target.value }); setFieldErrors(p => ({ ...p, confirm: "" })); }}
+                  onKeyDown={handleKeyDown}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm(v => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: T.textMuted, padding: 0, display: "flex" }}
+                >
+                  <EyeIcon show={showConfirm} />
+                </button>
+              </div>
+              <FieldError msg={fieldErrors.confirm} />
+              {form.confirm && form.confirm === form.password && (
+                <div style={{ color: T.green, fontSize: 11, marginTop: 5, marginBottom: 4 }}>✓ Les mots de passe correspondent</div>
+              )}
+            </div>
+          )}
+
+          {/* Erreur globale */}
           {error && (
             <div style={{
               background: "rgba(239,68,68,0.1)", color: T.red, padding: "10px 14px",
@@ -387,8 +602,16 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
             </div>
           )}
 
+          {/* Bouton submit */}
           <Btn onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "13px 0" }}>
-            {loading ? "Chargement..." : mode === "login" ? "Se connecter" : "Créer mon compte"}
+            {loading ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
+                {mode === "login" ? "Connexion..." : "Création..."}
+              </span>
+            ) : (
+              mode === "login" ? "Se connecter" : "Créer mon compte"
+            )}
           </Btn>
         </div>
       </div>
@@ -396,64 +619,57 @@ function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-//  SCREEN 3 â€” PHOTOGRAPHER DASHBOARD
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
 function AccountTab({ token }) {
-  var currentPwd = "";
-  var newPwd = "";
-  var confirmPwd = "";
-  var msgEl = null;
-  
-  function handleChange() {
-    currentPwd = document.getElementById("fk-current-pwd").value;
-    newPwd = document.getElementById("fk-new-pwd").value;
-    confirmPwd = document.getElementById("fk-confirm-pwd").value;
-    msgEl = document.getElementById("fk-pwd-msg");
-    
-    if (!currentPwd || !newPwd || !confirmPwd) {
-      msgEl.textContent = "Remplissez tous les champs.";
-      msgEl.style.color = T.red;
-      return;
-    }
-    if (newPwd.length < 6) {
-      msgEl.textContent = "Le nouveau mot de passe doit faire au moins 6 caracteres.";
-      msgEl.style.color = T.red;
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      msgEl.textContent = "Les mots de passe ne correspondent pas.";
-      msgEl.style.color = T.red;
-      return;
-    }
-    
-    msgEl.textContent = "Modification en cours...";
-    msgEl.style.color = T.textMuted;
-    
-    fetch(API + "/auth/change-password", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify({ current_password: currentPwd, new_password: newPwd }),
-    })
-    .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-    .then(function(res) {
+  const [currentPwd, setCurrentPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confirmPwd, setConfirmPwd] = useState("");
+  const [msg, setMsg] = useState({ text: "", color: T.textMuted });
+  const [loading, setLoading] = useState(false);
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const validate = () => {
+    if (!currentPwd || !newPwd || !confirmPwd) { setMsg({ text: "Remplissez tous les champs.", color: T.red }); return false; }
+    if (newPwd.length < 8) { setMsg({ text: "Le nouveau mot de passe doit faire au moins 8 caractères.", color: T.red }); return false; }
+    if (newPwd !== confirmPwd) { setMsg({ text: "Les mots de passe ne correspondent pas.", color: T.red }); return false; }
+    return true;
+  };
+
+  const handleChange = async () => {
+    if (!validate()) return;
+    setLoading(true);
+    setMsg({ text: "Modification en cours...", color: T.textMuted });
+    try {
+      const res = await fetch(API + "/auth/change-password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ current_password: currentPwd, new_password: newPwd }),
+      });
+      const data = await res.json();
       if (res.ok) {
-        msgEl.textContent = "Mot de passe modifie avec succes !";
-        msgEl.style.color = T.green;
-        document.getElementById("fk-current-pwd").value = "";
-        document.getElementById("fk-new-pwd").value = "";
-        document.getElementById("fk-confirm-pwd").value = "";
+        setMsg({ text: "✓ Mot de passe modifié avec succès !", color: T.green });
+        setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
       } else {
-        msgEl.textContent = res.data.error || "Erreur";
-        msgEl.style.color = T.red;
+        setMsg({ text: data.error || "Erreur", color: T.red });
       }
-    })
-    .catch(function() {
-      msgEl.textContent = "Erreur de connexion.";
-      msgEl.style.color = T.red;
-    });
-  }
+    } catch {
+      setMsg({ text: "Erreur de connexion.", color: T.red });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onKeyDown = (e) => { if (e.key === "Enter") handleChange(); };
+  const eyeBtn = (show, setShow) => (
+    <button type="button" onClick={() => setShow(!show)} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: T.textMuted, cursor: "pointer", padding: 0, display: "flex", alignItems: "center" }}>
+      {show ? (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      ) : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      )}
+    </button>
+  );
 
   return (
     <div>
@@ -462,26 +678,37 @@ function AccountTab({ token }) {
         <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Changer le mot de passe</h3>
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Mot de passe actuel</label>
-          <input id="fk-current-pwd" type="password" placeholder="Votre mot de passe actuel" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          <div style={{ position: "relative" }}>
+            <input type={showCurrent ? "text" : "password"} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Votre mot de passe actuel" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+            {eyeBtn(showCurrent, setShowCurrent)}
+          </div>
         </div>
         <div style={{ marginBottom: 14 }}>
           <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Nouveau mot de passe</label>
-          <input id="fk-new-pwd" type="password" placeholder="Minimum 6 caracteres" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          <div style={{ position: "relative" }}>
+            <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Minimum 8 caractères" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+            {eyeBtn(showNew, setShowNew)}
+          </div>
         </div>
-        <div style={{ marginBottom: 20 }}>
+        <div style={{ marginBottom: 16 }}>
           <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Confirmer le nouveau mot de passe</label>
-          <input id="fk-confirm-pwd" type="password" placeholder="Retapez le nouveau mot de passe" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          <div style={{ position: "relative" }}>
+            <input type={showConfirm ? "text" : "password"} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Retapez le nouveau mot de passe" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+            {eyeBtn(showConfirm, setShowConfirm)}
+          </div>
         </div>
-        <p id="fk-pwd-msg" style={{ fontSize: 13, marginBottom: 16, minHeight: 20 }}></p>
-        <button onClick={handleChange} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Modifier le mot de passe</button>
+        {msg.text && <p style={{ fontSize: 13, marginBottom: 16, color: msg.color, minHeight: 20 }}>{msg.text}</p>}
+        <button onClick={handleChange} disabled={loading} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: T.font }}>
+          {loading ? "Modification..." : "Modifier le mot de passe"}
+        </button>
       </div>
     </div>
   );
 }
 
-function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
+function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab }) {
   const [user, setUser] = useState(initialUser);
-  const [tab, setTab] = useState("stats");
+  const [tab, setTab] = useState(initialTab || "stats");
 
 // Recharger le profil à chaque visite pour synchro admin
   useEffect(() => {
@@ -540,9 +767,19 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span style={{ fontSize: 13, color: T.textMuted }}>
-            {user?.studio_name || user?.name || "Photographe"}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 13, color: T.textMuted }}>
+              {user?.studio_name || user?.name || "Photographe"}
+            </span>
+            {user?.plan && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
+                background: user.plan === "pro" ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)",
+                color: user.plan === "pro" ? T.gold : T.textDim,
+                textTransform: "uppercase", letterSpacing: 1,
+              }}>{user.plan}</span>
+            )}
+          </div>
           <button onClick={onLogout} style={{
             background: "transparent", border: "none", color: T.textMuted,
             cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12,
@@ -558,7 +795,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
         borderBottom: `1px solid ${T.border}`, background: T.card,
       }}>
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
+          <button key={t.id} onClick={() => { setTab(t.id); onNavigate("dashboard", { tab: t.id }); }} style={{
             display: "flex", alignItems: "center", gap: 6,
             padding: "10px 18px", borderRadius: T.radiusSm, border: "none",
             background: tab === t.id ? T.accentDim : "transparent",
@@ -585,22 +822,48 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout }) {
 // â”€â”€â”€ Stats Tab â”€â”€â”€
 function StatsTab({ token }) {
   const [data, setData] = useState({ photos: 0, events: 0, sales: 0, clients: 0 });
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    fetch(API + "/events", { headers: { Authorization: "Bearer " + token } })
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        var evts = d.events || d || [];
-        var totalPhotos = evts.reduce(function(sum, e) { return sum + (parseInt(e.photos_count) || 0); }, 0);
-        setData({ photos: totalPhotos, events: evts.length, sales: 0, clients: 0 });
-      })
-      .catch(function() {});
+    setLoading(true);
+    Promise.all([
+      fetch(API + "/events", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+      fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()),
+    ])
+    .then(function([eventsData, meData]) {
+      var evts = eventsData.events || eventsData || [];
+      var totalPhotos = evts.reduce(function(sum, e) { return sum + (parseInt(e.photos_count) || 0); }, 0);
+      var user = meData.user || meData || {};
+      var totalRevenue = parseFloat(user.total_revenue) || 0;
+      var totalClients = parseInt(user.total_clients) || evts.reduce(function(sum, e) { return sum + (parseInt(e.photos_sold) || 0); }, 0);
+      setData({ photos: totalPhotos, events: evts.length, sales: totalRevenue, clients: totalClients });
+    })
+    .catch(function() {})
+    .finally(function() { setLoading(false); });
   }, [token]);
+
   const stats = [
     { label: "Photos téléchargées", value: String(data.photos), icon: Icon.Image(20), color: T.accent },
     { label: "Événements", value: String(data.events), icon: Icon.Calendar(20), color: T.gold },
     { label: "Revenus", value: fcfa(data.sales), icon: Icon.CreditCard(20), color: T.green },
     { label: "Clients", value: String(data.clients), icon: Icon.Users(20), color: "#818CF8" },
   ];
+
+  if (loading) {
+    return (
+      <div>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, marginBottom: 24, fontWeight: 700 }}>Tableau de bord</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ background: T.card, borderRadius: T.radius, border: `1px solid ${T.border}`, padding: "24px 20px" }}>
+              <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 6, height: 12, width: "60%", marginBottom: 14, animation: "pulse 1.5s infinite" }} />
+              <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 6, height: 28, width: "40%", animation: "pulse 1.5s infinite" }} />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -622,14 +885,16 @@ function StatsTab({ token }) {
         ))}
       </div>
 
-      <div style={{
-        marginTop: 28, background: T.card, borderRadius: T.radius,
-        border: `1px solid ${T.border}`, padding: "32px 24px", textAlign: "center",
-      }}>
-        <div style={{ color: T.textMuted, marginBottom: 8 }}>{Icon.Camera(32)}</div>
-        <p style={{ color: T.textMuted, fontSize: 14, marginBottom: 4 }}>Commencez par créer un événement</p>
-        <p style={{ color: T.textDim, fontSize: 12 }}>Allez dans l'onglet "Événements" pour démarrer</p>
-      </div>
+      {data.events === 0 && (
+        <div style={{
+          marginTop: 28, background: T.card, borderRadius: T.radius,
+          border: `1px solid ${T.border}`, padding: "32px 24px", textAlign: "center",
+        }}>
+          <div style={{ color: T.textMuted, marginBottom: 8 }}>{Icon.Camera(32)}</div>
+          <p style={{ color: T.textMuted, fontSize: 14, marginBottom: 4 }}>Commencez par créer un événement</p>
+          <p style={{ color: T.textDim, fontSize: 12 }}>Allez dans l'onglet "Événements" pour démarrer</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -642,9 +907,15 @@ function PhotosTab({ token, events }) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
+  const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 Mo
   const processFiles = useCallback((newFiles) => {
     const imgs = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
-    const withPreviews = imgs.map((file) => ({
+    const oversized = imgs.filter(f => f.size > MAX_FILE_SIZE);
+    if (oversized.length > 0) {
+      alert(`${oversized.length} fichier(s) ignoré(s) car trop lourds (max 25 Mo) : ${oversized.map(f => f.name).join(", ")}`);
+    }
+    const valid = imgs.filter(f => f.size <= MAX_FILE_SIZE);
+    const withPreviews = valid.map((file) => ({
       id: crypto.randomUUID(), file, name: file.name, size: file.size,
       preview: URL.createObjectURL(file), status: "pending", progress: 0,
     }));
@@ -846,7 +1117,12 @@ function PhotosTab({ token, events }) {
             <div>
               {!selectedEvent && <p style={{ fontSize: 12, color: T.accent, display: "flex", alignItems: "center", gap: 6 }}>{Icon.AlertCircle(14)} Sélectionnez un événement</p>}
               {selectedEvent && pendingCount > 0 && <p style={{ fontSize: 13, color: T.textMuted }}><strong style={{ color: T.text }}>{pendingCount}</strong> prête{pendingCount > 1 ? "s" : ""} · {formatSize(files.filter((f) => f.status === "pending").reduce((a, f) => a + f.size, 0))}</p>}
-              {selectedEvent && pendingCount === 0 && doneCount > 0 && <p style={{ fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 6 }}>{Icon.Check(14)} Toutes envoyées !</p>}
+              {selectedEvent && pendingCount === 0 && doneCount > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <p style={{ fontSize: 13, color: T.green, display: "flex", alignItems: "center", gap: 6 }}>{Icon.Check(14)} Toutes envoyées !</p>
+                  <button onClick={() => { files.forEach(f => URL.revokeObjectURL(f.preview)); setFiles([]); setSelectedEvent(""); }} style={{ background: T.accentDim, border: "none", borderRadius: 8, padding: "5px 14px", color: T.accent, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Terminer & vider</button>
+                </div>
+              )}
             </div>
             <Btn onClick={handleUpload} disabled={!selectedEvent || pendingCount === 0 || uploading}>
               {uploading ? <span>Envoi...</span> : <span>{Icon.Upload(16)} Envoyer ({pendingCount})</span>}
@@ -919,41 +1195,222 @@ function LiveTab({ token, events, onNavigate, setEvents }) {
   const [liveEvent, setLiveEvent] = useState(null);
   const [dashData, setDashData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState(null);
+  const [showQrModal, setShowQrModal] = useState(false);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
+  const [uploadingLive, setUploadingLive] = useState(false);
+  const [uploadDone, setUploadDone] = useState(0);
+  const liveUploadRef = useRef(null);
   const pollRef = useRef(null);
-  useEffect(() => { if (events.length === 0) return; const live = events.find(e => e.is_live); setLiveEvent(live || null); setLoading(false); }, [events]);
+
+  // FIX: setLoading(false) meme si aucun evenement
+  useEffect(() => {
+    const live = events.find(e => e.is_live);
+    setLiveEvent(live || null);
+    setLoading(false);
+  }, [events]);
+
   useEffect(() => {
     if (!liveEvent) return;
-    const fetchDash = () => { fetch(API + "/live/" + liveEvent.id + "/dashboard", { headers: { Authorization: "Bearer " + token } }).then(r => r.json()).then(d => setDashData(d)).catch(() => {}); };
+    const fetchDash = () => {
+      fetch(API + "/live/" + liveEvent.id + "/dashboard", { headers: { Authorization: "Bearer " + token } })
+        .then(r => r.json())
+        .then(d => { setDashData(d); setLastUpdated(new Date()); })
+        .catch(() => {});
+    };
     fetchDash();
     pollRef.current = setInterval(fetchDash, 10000);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [liveEvent, token]);
-  const stopLive = () => { if (!liveEvent) return; fetch(API + "/live/" + liveEvent.id + "/stop", { method: "POST", headers: { Authorization: "Bearer " + token } }).then(r => r.json()).then(d => { if (d.event) setEvents(prev => prev.map(x => x.id === liveEvent.id ? { ...x, is_live: false } : x)); }); };
-  const timeAgo = (date) => { const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000); if (diff < 60) return "Il y a " + diff + "s"; if (diff < 3600) return "Il y a " + Math.floor(diff / 60) + " min"; return "Il y a " + Math.floor(diff / 3600) + "h"; };
+
+  // FIX: reset liveEvent apres arret
+  const stopLive = () => {
+    if (!liveEvent) return;
+    fetch(API + "/live/" + liveEvent.id + "/stop", { method: "POST", headers: { Authorization: "Bearer " + token } })
+      .then(r => r.json())
+      .then(d => {
+        if (d.event) {
+          setEvents(prev => prev.map(x => x.id === liveEvent.id ? { ...x, is_live: false } : x));
+          setLiveEvent(null);
+          setDashData(null);
+        }
+      });
+    setShowStopConfirm(false);
+  };
+
+  const timeAgo = (date) => {
+    const diff = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+    if (diff < 60) return "Il y a " + diff + "s";
+    if (diff < 3600) return "Il y a " + Math.floor(diff / 60) + " min";
+    return "Il y a " + Math.floor(diff / 3600) + "h";
+  };
+
+  const lastUpdatedStr = () => {
+    if (!lastUpdated) return "...";
+    const diff = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
+    if (diff < 5) return "a l instant";
+    return "il y a " + diff + "s";
+  };
+
+  const handleLiveUpload = async (e) => {
+    const picked = Array.from(e.target.files || []).filter(f => f.type.startsWith("image/") && f.size <= 25 * 1024 * 1024);
+    if (!picked.length || !liveEvent) return;
+    setUploadingLive(true);
+    setUploadDone(0);
+    let done = 0;
+    for (let i = 0; i < picked.length; i += 5) {
+      const batch = picked.slice(i, i + 5);
+      const fd = new FormData();
+      fd.append("event_id", liveEvent.id);
+      batch.forEach(f => fd.append("photos", f));
+      try {
+        const res = await fetch(API + "/photos/upload", { method: "POST", headers: { Authorization: "Bearer " + token }, body: fd });
+        if (res.ok) done += batch.length;
+      } catch {}
+      setUploadDone(done);
+    }
+    setUploadingLive(false);
+    e.target.value = "";
+    fetch(API + "/live/" + liveEvent.id + "/dashboard", { headers: { Authorization: "Bearer " + token } })
+      .then(r => r.json()).then(d => { setDashData(d); setLastUpdated(new Date()); }).catch(() => {});
+  };
+
   if (loading) return <p style={{ color: T.textMuted, textAlign: "center", padding: 40 }}>Chargement...</p>;
-  if (!liveEvent) return (<div style={{ textAlign: "center", padding: "60px 24px" }}><div style={{ color: T.textMuted, marginBottom: 12 }}>{Icon.Phone(32)}</div><h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Aucun evenement en direct</h2><p style={{ color: T.textMuted, fontSize: 14 }}>Activez le mode live sur un evenement depuis l onglet Evenements</p></div>);
-  const stats = dashData?.stats || { photos_count: 0, visitors_count: 0, matches_count: 0, purchases_count: 0 };
+
+  if (!liveEvent) return (
+    <div style={{ textAlign: "center", padding: "60px 24px" }}>
+      <div style={{ color: T.textMuted, marginBottom: 12 }}>{Icon.Phone(32)}</div>
+      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Aucun evenement en direct</h2>
+      <p style={{ color: T.textMuted, fontSize: 14 }}>Activez le mode live sur un evenement depuis l onglet Evenements</p>
+    </div>
+  );
+
+  const stats = dashData?.stats || { photos_count: 0, visitors_count: 0, matches_count: 0, purchases_count: 0, revenue: 0 };
   const visitors = dashData?.visitors || [];
   const liveUrl = "https://fotokash.com/live/" + liveEvent.slug;
-  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=200x200\u0026data=" + encodeURIComponent(liveUrl);
-  return (<div>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-      <div><h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>{liveEvent.name}<span style={{ background: T.accent, color: "#fff", fontSize: 11, padding: "3px 10px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.font }}><span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite", display: "inline-block" }}></span> En direct</span></h2><p style={{ color: T.textMuted, fontSize: 13, marginTop: 4 }}>Dashboard temps reel</p></div>
-      <Btn variant="ghost" onClick={stopLive} style={{ color: T.red, borderColor: "rgba(239,68,68,0.3)" }}>Arreter le live</Btn>
+  const qrUrlSmall = "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=" + encodeURIComponent(liveUrl);
+  const qrUrlLarge = "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=" + encodeURIComponent(liveUrl);
+
+  return (
+    <div>
+      {showStopConfirm && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: T.card, borderRadius: T.radius, padding: "28px 28px 24px", maxWidth: 360, width: "100%", textAlign: "center" }}>
+            <div style={{ color: T.red, marginBottom: 12 }}>{Icon.AlertCircle(32)}</div>
+            <h3 style={{ fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Arreter le live ?</h3>
+            <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 24 }}>Les invites ne pourront plus acceder a la page de l evenement. Cette action est irreversible.</p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <Btn variant="ghost" onClick={() => setShowStopConfirm(false)} style={{ padding: "10px 20px" }}>Annuler</Btn>
+              <button onClick={stopLive} style={{ background: "rgba(239,68,68,0.9)", color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>Oui, arreter</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showQrModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 300, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }} onClick={() => setShowQrModal(false)}>
+          <div style={{ background: "#fff", borderRadius: 16, padding: 24, display: "inline-block" }} onClick={e => e.stopPropagation()}>
+            <img src={qrUrlLarge} alt="QR Code" style={{ width: 280, height: 280, display: "block" }} />
+          </div>
+          <p style={{ color: T.accent, fontWeight: 700, fontSize: 16, marginTop: 16, textAlign: "center" }}>{liveUrl}</p>
+          <p style={{ color: T.textMuted, fontSize: 12, marginTop: 8 }}>Tapez n importe ou pour fermer</p>
+        </div>
+      )}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
+            {liveEvent.name}
+            <span style={{ background: T.accent, color: "#fff", fontSize: 11, padding: "3px 10px", borderRadius: 20, display: "inline-flex", alignItems: "center", gap: 5, fontFamily: T.font }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite", display: "inline-block" }}></span> En direct
+            </span>
+          </h2>
+          <p style={{ color: T.textMuted, fontSize: 13, marginTop: 4 }}>Dashboard temps reel</p>
+        </div>
+        <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, background: T.accentDim, border: "1px solid rgba(232,89,60,0.3)", borderRadius: T.radiusSm, padding: "8px 14px", color: T.accent, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font }}>
+            <input ref={liveUploadRef} type="file" accept="image/*" multiple onChange={handleLiveUpload} style={{ display: "none" }} />
+            {uploadingLive ? (uploadDone + " envoyee" + (uploadDone > 1 ? "s" : "") + "...") : "Ajouter des photos"}
+          </label>
+          <Btn variant="ghost" onClick={() => setShowStopConfirm(true)} style={{ color: T.red, borderColor: "rgba(239,68,68,0.3)" }}>Arreter le live</Btn>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
+        {[
+          { label: "Photos", value: stats.photos_count, sub: null, icon: Icon.Image(18), color: T.accent },
+          { label: "Visiteurs", value: stats.visitors_count, sub: null, icon: Icon.Users(18), color: T.gold },
+          { label: "Matches", value: stats.matches_count, sub: null, icon: Icon.Search(18), color: T.green },
+          { label: "Achats", value: stats.purchases_count, sub: stats.revenue > 0 ? fcfa(stats.revenue) : null, icon: Icon.CreditCard(18), color: "#818CF8" },
+        ].map((s, i) => (
+          <div key={i} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{s.label}</span>
+              <span style={{ color: s.color, opacity: 0.7 }}>{s.icon}</span>
+            </div>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div>
+            {s.sub && <div style={{ fontSize: 11, color: T.green, fontWeight: 600, marginTop: 4 }}>{s.sub}</div>}
+          </div>
+        ))}
+      </div>
+
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+        <div style={{ background: "#fff", borderRadius: 10, padding: 10, flexShrink: 0, cursor: "pointer" }} onClick={() => setShowQrModal(true)}>
+          <img src={qrUrlSmall} alt="QR Code" style={{ width: 100, height: 100, display: "block" }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <p style={{ fontSize: 13, color: T.textMuted, marginBottom: 6 }}>Les invites scannent ce QR code pour retrouver leurs photos</p>
+          <p style={{ fontSize: 14, color: T.accent, fontWeight: 600, marginBottom: 10, wordBreak: "break-all" }}>{liveUrl}</p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <Btn variant="dark" onClick={() => { navigator.clipboard.writeText(liveUrl); alert("Lien copie !"); }} style={{ padding: "6px 14px", fontSize: 12 }}>Copier le lien</Btn>
+            <Btn variant="dark" onClick={() => onNavigate("live", { slug: liveEvent.slug })} style={{ padding: "6px 14px", fontSize: 12 }}>Voir la page</Btn>
+            <Btn variant="dark" onClick={() => setShowQrModal(true)} style={{ padding: "6px 14px", fontSize: 12 }}>QR plein ecran</Btn>
+            <Btn variant="dark" onClick={() => { const link = document.createElement("a"); link.href = qrUrlSmall; link.download = "FotoKash-QR-" + liveEvent.slug + ".png"; link.click(); }} style={{ padding: "6px 14px", fontSize: 12 }}>Telecharger QR</Btn>
+            <a href={"https://wa.me/?text=" + encodeURIComponent("Retrouvez vos photos de l evenement " + liveEvent.name + " ici : " + liveUrl)} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(37,209,102,0.15)", border: "none", borderRadius: T.radiusSm, padding: "6px 14px", color: "#25D166", fontSize: 12, fontWeight: 600, textDecoration: "none", cursor: "pointer", fontFamily: T.font }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.534 5.857L0 24l6.335-1.508C8.07 23.453 10.003 24 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.885 0-3.677-.502-5.218-1.378l-.374-.221-3.762.895.952-3.685-.243-.388A9.957 9.957 0 012 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+              Partager WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600 }}>Visiteurs en temps reel</h3>
+          <span style={{ fontSize: 11, color: T.textDim }}>Mis a jour {lastUpdatedStr()}</span>
+        </div>
+        {visitors.length === 0 ? (
+          <p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: "24px 0" }}>Aucun visiteur pour le moment</p>
+        ) : (
+          <div>
+            {visitors.map((v, i) => (
+              <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < visitors.length - 1 ? "1px solid " + T.border : "none" }}>
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: T.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontSize: 13, fontWeight: 600 }}>
+                  {"#" + v.visitor_number}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600 }}>{"Visiteur #" + v.visitor_number}</div>
+                  <div style={{ fontSize: 11, color: T.textDim }}>{timeAgo(v.created_at)}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <div style={{ background: "rgba(74,222,128,0.12)", color: T.green, fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12 }}>
+                    {v.matched_count + " trouvee" + (v.matched_count !== 1 ? "s" : "")}
+                  </div>
+                  {v.purchased_count > 0 && (
+                    <div style={{ background: "rgba(129,140,248,0.15)", color: "#818CF8", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 12 }}>
+                      {v.purchased_count + " achetee" + (v.purchased_count !== 1 ? "s" : "")}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12, marginBottom: 24 }}>
-      {[{ label: "Photos", value: stats.photos_count, icon: Icon.Image(18), color: T.accent },{ label: "Visiteurs", value: stats.visitors_count, icon: Icon.Users(18), color: T.gold },{ label: "Matches", value: stats.matches_count, icon: Icon.Search(18), color: T.green },{ label: "Achats", value: stats.purchases_count, icon: Icon.CreditCard(18), color: "#818CF8" }].map((s, i) => (<div key={i} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px 16px" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 10 }}><span style={{ fontSize: 11, color: T.textMuted, fontWeight: 500 }}>{s.label}</span><span style={{ color: s.color, opacity: 0.7 }}>{s.icon}</span></div><div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, color: s.color }}>{s.value}</div></div>))}
-    </div>
-    <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px", marginBottom: 24, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-      <div style={{ background: "#fff", borderRadius: 10, padding: 10, flexShrink: 0 }}><img src={qrUrl} alt="QR Code" style={{ width: 100, height: 100, display: "block" }} /></div>
-      <div style={{ flex: 1, minWidth: 200 }}><p style={{ fontSize: 13, color: T.textMuted, marginBottom: 6 }}>Les invites scannent ce QR code pour retrouver leurs photos</p><p style={{ fontSize: 14, color: T.accent, fontWeight: 600, marginBottom: 10, wordBreak: "break-all" }}>{liveUrl}</p><div style={{ display: "flex", gap: 8 }}><Btn variant="dark" onClick={() => { navigator.clipboard.writeText(liveUrl); alert("Lien copie !"); }} style={{ padding: "6px 14px", fontSize: 12 }}>Copier le lien</Btn><Btn variant="dark" onClick={() => onNavigate("live", { slug: liveEvent.slug })} style={{ padding: "6px 14px", fontSize: 12 }}>Voir la page</Btn><Btn variant="dark" onClick={() => { const link = document.createElement("a"); link.href = qrUrl; link.download = "FotoKash-QR-" + liveEvent.slug + ".png"; link.click(); }} style={{ padding: "6px 14px", fontSize: 12 }}>Telecharger QR</Btn></div></div>
-    </div>
-    <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}><h3 style={{ fontSize: 15, fontWeight: 600 }}>Visiteurs en temps reel</h3><span style={{ fontSize: 11, color: T.textDim }}>Actualisation auto 10s</span></div>
-      {visitors.length === 0 ? (<p style={{ color: T.textMuted, fontSize: 13, textAlign: "center", padding: "24px 0" }}>Aucun visiteur pour le moment</p>) : (<div>{visitors.map((v, i) => (<div key={v.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < visitors.length - 1 ? "1px solid " + T.border : "none" }}><div style={{ width: 36, height: 36, borderRadius: "50%", background: T.accentDim, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent, fontSize: 13, fontWeight: 600 }}>{"#" + v.visitor_number}</div><div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600 }}>{"Visiteur #" + v.visitor_number}</div><div style={{ fontSize: 11, color: T.textDim }}>{timeAgo(v.created_at)}</div></div><div style={{ background: "rgba(74,222,128,0.12)", color: T.green, fontSize: 12, fontWeight: 600, padding: "3px 10px", borderRadius: 12 }}>{v.matched_count + " photo" + (v.matched_count !== 1 ? "s" : "")}</div></div>))}</div>)}
-    </div>
-  </div>);
+  );
 }
+
 function EventsTab({ token, events, setEvents, loading, onNavigate }) {
   const [showForm, setShowForm] = useState(false);
   const [viewingEvent, setViewingEvent] = useState(null);
@@ -1040,7 +1497,8 @@ function EventsTab({ token, events, setEvents, loading, onNavigate }) {
                 <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                   {e.date && <span>{new Date(e.date).toLocaleDateString("fr-FR")}</span>}
                   {e.location && <span>{e.location}</span>}
-                  <span style={{ color: T.accent, cursor: "pointer", textDecoration: "underline" }} onClick={function(ev) { ev.stopPropagation(); navigator.clipboard.writeText("https://fotokash.com/e/" + e.slug).then(function() { alert("Lien copie : https://fotokash.com/e/" + e.slug); }); }}>Copier le lien</span>
+                  <span style={{ color: T.accent, cursor: "pointer", textDecoration: "underline" }} onClick={function(ev) { ev.stopPropagation(); navigator.clipboard.writeText("https://fotokash.com/e/" + e.slug).then(function() { alert("Lien copié !"); }); }}>Copier le lien</span>
+                  <a href={"https://fotokash.com/e/" + e.slug} target="_blank" rel="noopener noreferrer" style={{ color: T.textMuted, textDecoration: "none", fontSize: 12 }}>↗ Voir la page</a>
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1520,43 +1978,140 @@ function QrPhotoPage({ qrCode, onNavigate }) {
   );
 }
 
+// ── URL helpers ──────────────────────────────────────────────────────
+const TITLES = {
+  landing: "FotoKash - Plateforme photo événementielle",
+  login: "Connexion - FotoKash",
+  signup: "Inscription - FotoKash",
+  dashboard: "Dashboard - FotoKash",
+  "dashboard/stats": "Statistiques - FotoKash",
+  "dashboard/events": "Événements - FotoKash",
+  "dashboard/photos": "Photos - FotoKash",
+  "dashboard/live": "Live - FotoKash",
+  "dashboard/account": "Mon compte - FotoKash",
+  legal: "Mentions légales - FotoKash",
+  admin: "Admin - FotoKash",
+  "admin/dashboard": "Dashboard Admin - FotoKash",
+  "admin/photographers": "Photographes - FotoKash Admin",
+  "admin/subscriptions": "Abonnements - FotoKash Admin",
+  "admin/logs": "Logs - FotoKash Admin",
+  "admin/settings": "Paramètres - FotoKash Admin",
+};
+
+function screenToUrl(s, props = {}) {
+  if (s === "landing") return "/";
+  if (s === "auth") return props.mode === "signup" ? "/signup" : "/login";
+  if (s === "dashboard") {
+    const t = props.tab;
+    return t && t !== "stats" ? "/dashboard/" + t : "/dashboard";
+  }
+  if (s === "client" || s === "client-demo") return "/e/" + (props.slug || "");
+  if (s === "live") return "/live/" + (props.slug || "");
+  if (s === "legal") return "/legal";
+  if (s === "admin") {
+    const p = props.page;
+    return p && p !== "dashboard" ? "/admin/" + p : "/admin";
+  }
+  if (s === "qr-photo") return "/p/" + (props.qrCode || "");
+  return "/";
+}
+
+function urlToScreenProps(path) {
+  if (path === "/" || path === "") return { screen: "landing", props: {} };
+  if (path === "/login") return { screen: "auth", props: { mode: "login" } };
+  if (path === "/signup") return { screen: "auth", props: { mode: "signup" } };
+  if (path.startsWith("/dashboard")) {
+    const tab = path.replace("/dashboard", "").replace("/", "") || "stats";
+    return { screen: "dashboard", props: { tab } };
+  }
+  if (path.startsWith("/e/")) return { screen: "client", props: { slug: path.replace("/e/", "") } };
+  if (path.startsWith("/live/")) return { screen: "live", props: { slug: path.replace("/live/", "") } };
+  if (path.startsWith("/p/")) return { screen: "qr-photo", props: { qrCode: path.replace("/p/", "") } };
+  if (path === "/legal") return { screen: "legal", props: {} };
+  if (path === "/admin" || path.startsWith("/admin/")) {
+    const page = path.replace("/admin", "").replace("/", "") || "dashboard";
+    return { screen: "admin", props: { page } };
+  }
+  return { screen: "landing", props: {} };
+}
+
+function getPageTitle(s, props = {}) {
+  if (s === "auth") return props.mode === "signup" ? TITLES.signup : TITLES.login;
+  if (s === "dashboard" && props.tab) return TITLES["dashboard/" + props.tab] || TITLES.dashboard;
+  if (s === "admin" && props.page) return TITLES["admin/" + props.page] || TITLES.admin;
+  return TITLES[s] || "FotoKash";
+}
+
 export default function FotoKashApp() {
-  const [screen, setScreen] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return "client";
-    if (p.startsWith("/p/")) return "qr-photo"; return "landing"; });
-  const [screenProps, setScreenProps] = useState(() => { var p = window.location.pathname; if (p.startsWith("/e/")) return { slug: p.replace("/e/", "") };
-    if (p.startsWith("/p/")) return { qrCode: p.replace("/p/", "") }; return {}; });
+  const initState = urlToScreenProps(window.location.pathname);
+  const [screen, setScreen] = useState(initState.screen);
+  const [screenProps, setScreenProps] = useState(initState.props);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem("fotokash_token"));
   const [platform, setPlatform] = useState({ name: "FotoKash", email: "contact@fotokash.com" });
-  useEffect(function() { fetch(API + "/photos/platform").then(function(r) { return r.json(); }).then(function(d) { setPlatform(d); }).catch(function() {}); }, []);
 
-  // Detecter les URLs publiques /live/
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path.startsWith("/live/")) {
-      const slug = path.replace("/live/", "");
-      if (slug) { setScreen("live"); setScreenProps({ slug }); }
-    }
+  useEffect(function() {
+    fetch(API + "/photos/platform").then(function(r) { return r.json(); }).then(function(d) { setPlatform(d); }).catch(function() {});
   }, []);
-  // Auto-login if token exists
+
+  // Auto-login if token exists (skip public pages)
   useEffect(() => {
-    var currentPath = window.location.pathname;
-    if (currentPath.startsWith("/e/")) return;
-    if (currentPath.startsWith("/p/")) return;
-    if (currentPath.startsWith("/live/")) return;
+    const pub = ["/e/", "/p/", "/live/"];
+    if (pub.some(p => window.location.pathname.startsWith(p))) return;
     if (token && !user) {
       fetch(API + "/auth/me", { headers: { Authorization: "Bearer " + token } })
         .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-        .then(function(d) { var u = d.user || d.photographer || d; setUser(u); setScreen(u.role === "admin" ? "admin" : "dashboard"); })
+        .then(function(d) {
+          var u = d.user || d.photographer || d;
+          setUser(u);
+          const dest = u.role === "admin" ? "admin" : "dashboard";
+          const destProps = dest === "admin" ? { page: "dashboard" } : { tab: "stats" };
+          setScreen(dest);
+          setScreenProps(destProps);
+          const url = screenToUrl(dest, destProps);
+          window.history.replaceState({ screen: dest, props: destProps }, "", url);
+          document.title = getPageTitle(dest, destProps);
+        })
         .catch(function() { localStorage.removeItem("fotokash_token"); setToken(null); });
     }
   }, [token]);
 
-  const navigate = (s, props = {}) => { setScreen(s); setScreenProps(props); };
-  const handleAuth = (u, t) => { setUser(u); setToken(t); setScreen(u.role === "admin" ? "admin" : "dashboard"); };
+  // Handle browser back/forward
+  useEffect(() => {
+    const onPop = (e) => {
+      const { screen: s, props: p } = urlToScreenProps(window.location.pathname);
+      setScreen(s);
+      setScreenProps(p);
+      document.title = getPageTitle(s, p);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const navigate = (s, props = {}) => {
+    const url = screenToUrl(s, props);
+    const title = getPageTitle(s, props);
+    // Don't push duplicate entries for tab changes within dashboard
+    const isSamePath = window.location.pathname === url;
+    if (!isSamePath) {
+      window.history.pushState({ screen: s, props }, "", url);
+    }
+    document.title = title;
+    setScreen(s);
+    setScreenProps(props);
+  };
+
+  const handleAuth = (u, t) => {
+    setUser(u); setToken(t);
+    const dest = u.role === "admin" ? "admin" : "dashboard";
+    const destProps = dest === "admin" ? { page: "dashboard" } : { tab: "stats" };
+    navigate(dest, destProps);
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("fotokash_token");
-    setUser(null); setToken(null); setScreen("landing");
+    setUser(null); setToken(null);
+    navigate("landing");
   };
 
   return (
@@ -1564,11 +2119,11 @@ export default function FotoKashApp() {
       <style>{globalCSS}</style>
       {screen === "landing" && <LandingPage onNavigate={navigate} platform={platform} />}
       {screen === "auth" && <AuthScreen mode={screenProps.mode} onNavigate={navigate} onAuth={handleAuth} />}
-      {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
+      {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} initialTab={screenProps.tab} />}
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "legal" && <LegalPage tab={screenProps.tab} onNavigate={navigate} />}
       {screen === "live" && <LiveEventPage slug={screenProps.slug} onNavigate={navigate} />}
-      {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} />}
+      {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} initialPage={screenProps.page} />}
       {screen === "qr-photo" && <QrPhotoPage qrCode={screenProps.qrCode} onNavigate={navigate} />}
     </>
   );

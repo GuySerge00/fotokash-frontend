@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "/api";
 
@@ -22,6 +22,37 @@ const T = {
 
 const fcfa = (n) => new Intl.NumberFormat("fr-FR").format(n) + " FCFA";
 
+// Son de notification via Web Audio API (aucun fichier externe)
+function playNotificationSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc1 = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(ctx.destination);
+    osc1.type = "sine";
+    osc2.type = "sine";
+    osc1.frequency.setValueAtTime(880, ctx.currentTime);
+    osc1.frequency.setValueAtTime(1100, ctx.currentTime + 0.12);
+    osc2.frequency.setValueAtTime(1320, ctx.currentTime + 0.12);
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime + 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc1.start(ctx.currentTime);
+    osc2.start(ctx.currentTime + 0.12);
+    osc1.stop(ctx.currentTime + 0.45);
+    osc2.stop(ctx.currentTime + 0.45);
+  } catch (e) { /* navigateur ne supporte pas AudioContext */ }
+}
+
+// Vibration (mobile uniquement)
+function vibrateDevice() {
+  if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+}
+
 export default function LiveEventPage({ slug, onNavigate }) {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -38,9 +69,14 @@ export default function LiveEventPage({ slug, onNavigate }) {
   const [paymentProvider, setPaymentProvider] = useState("orange");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [mobileMoneyEnabled, setMobileMoneyEnabled] = useState(false);
+  // Notification nouvelles photos
+  const [newPhotosNotif, setNewPhotosNotif] = useState(null); // { count, ids }
+  const [newPhotoIds, setNewPhotoIds] = useState(new Set());
+  const notifTimerRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const pollRef = useRef(null);
+  const matchesRef = useRef([]);
 
   useEffect(() => {
     fetch(API + "/live/" + slug)
@@ -50,23 +86,55 @@ export default function LiveEventPage({ slug, onNavigate }) {
     fetch(API + "/photos/pricing").then(r => r.json()).then(d => setPricing(d)).catch(() => {});
   }, [slug]);
 
+  // Garde la ref à jour pour comparer dans le poll
+  useEffect(() => { matchesRef.current = matches; }, [matches]);
+
+  const doRefresh = useCallback(() => {
+    if (!visitorId) return;
+    setRefreshing(true);
+    fetch(API + "/live/" + slug + "/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitor_id: visitorId }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.matches) {
+          const prev = matchesRef.current;
+          const prevIds = new Set(prev.map(m => m.id));
+          const incoming = d.matches;
+          const freshOnes = incoming.filter(m => !prevIds.has(m.id));
+
+          if (freshOnes.length > 0) {
+            // Nouvelles photos trouvées → notifier
+            playNotificationSound();
+            vibrateDevice();
+            const freshIds = new Set(freshOnes.map(m => m.id));
+            setNewPhotoIds(freshIds);
+            setNewPhotosNotif({ count: freshOnes.length });
+            // Auto-effacer la surbrillance après 4s
+            if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+            notifTimerRef.current = setTimeout(() => {
+              setNewPhotosNotif(null);
+              setNewPhotoIds(new Set());
+            }, 4000);
+          }
+
+          setMatches(incoming);
+          setLastRefresh(new Date());
+        }
+      })
+      .catch(() => {})
+      .finally(() => setRefreshing(false));
+  }, [visitorId, slug]);
+
+  // Polling toutes les 10s (au lieu de 30s)
   useEffect(() => {
     if (visitorId && event && event.is_live) {
-      pollRef.current = setInterval(() => {
-        setRefreshing(true);
-        fetch(API + "/live/" + slug + "/refresh", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ visitor_id: visitorId }),
-        })
-          .then((r) => r.json())
-          .then((d) => { if (d.matches) { setMatches(d.matches); setLastRefresh(new Date()); } })
-          .catch(() => {})
-          .finally(() => setRefreshing(false));
-      }, 30000);
+      pollRef.current = setInterval(doRefresh, 10000);
     }
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [visitorId, event, slug]);
+  }, [visitorId, event, slug, doRefresh]);
 
   const startCamera = async () => {
     setShowCamera(true);
@@ -121,6 +189,14 @@ export default function LiveEventPage({ slug, onNavigate }) {
     setSelectedPhotos((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
   };
 
+  const selectAll = () => {
+    if (selectedPhotos.length === matches.length) {
+      setSelectedPhotos([]);
+    } else {
+      setSelectedPhotos(matches.map(m => m.id));
+    }
+  };
+
   const getPrice = () => {
     const n = selectedPhotos.length;
     if (n === 0) return 0;
@@ -150,6 +226,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
     alert("Telechargement termine !");
     setSelectedPhotos([]);
   };
+
   const submitPayment = async () => {
     if (!phoneNumber || phoneNumber.length < 8) { alert("Numero invalide."); return; }
     setPaymentLoading(true);
@@ -186,6 +263,17 @@ export default function LiveEventPage({ slug, onNavigate }) {
 
   return (
     <div style={{ minHeight: "100vh", background: T.bg, fontFamily: T.font, color: T.text }}>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        @keyframes slideDown { from { transform:translateY(-100%); opacity:0; } to { transform:translateY(0); opacity:1; } }
+        @keyframes photoNewPulse {
+          0% { box-shadow: 0 0 0 0 rgba(232,89,60,0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(232,89,60,0); }
+          100% { box-shadow: 0 0 0 0 rgba(232,89,60,0); }
+        }
+      `}</style>
+
       <header style={{ padding: "16px 20px", borderBottom: "1px solid " + T.border, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 28, height: 28, borderRadius: 7, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 12, fontWeight: 700 }}>FK</div>
@@ -198,6 +286,23 @@ export default function LiveEventPage({ slug, onNavigate }) {
           </div>
         )}
       </header>
+
+      {/* Notification nouvelles photos */}
+      {newPhotosNotif && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 300,
+          background: T.green, color: "#000",
+          padding: "14px 20px", textAlign: "center",
+          fontWeight: 700, fontSize: 15, fontFamily: T.font,
+          animation: "slideDown 0.3s ease",
+          display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+        }}>
+          <span style={{ fontSize: 20 }}>📸</span>
+          {newPhotosNotif.count === 1
+            ? "1 nouvelle photo trouvée !"
+            : `${newPhotosNotif.count} nouvelles photos trouvées !`}
+        </div>
+      )}
 
       <div style={{ maxWidth: 500, margin: "0 auto", padding: "20px 16px" }}>
         <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -221,11 +326,12 @@ export default function LiveEventPage({ slug, onNavigate }) {
             {event.is_live && (
               <p style={{ color: T.textDim, fontSize: 11, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.green, animation: "pulse 1.5s infinite", display: "inline-block" }}></span>
-                Actualisation auto toutes les 30s
+                Actualisation auto toutes les 10s
               </p>
             )}
           </div>
         )}
+
         {matches.length === 0 && !showCamera && visitorId && (
           <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "32px 20px", textAlign: "center", marginBottom: 20 }}>
             <div style={{ width: 60, height: 60, borderRadius: "50%", border: "3px solid " + T.accent, margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -236,11 +342,15 @@ export default function LiveEventPage({ slug, onNavigate }) {
             <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 20 }}>Restez sur cette page, vos photos apparaitront automatiquement !</p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 16 }}>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.green, animation: "pulse 1.5s infinite", display: "inline-block" }}></span>
-              <span style={{ color: T.green, fontSize: 12, fontWeight: 600 }}>Recherche active - actualisation toutes les 30s</span>
+              <span style={{ color: T.green, fontSize: 12, fontWeight: 600 }}>Recherche active — actualisation toutes les 10s</span>
             </div>
-            {refreshing && <p style={{ color: T.accent, fontSize: 11 }}>Recherche en cours...</p>}
-            {lastRefresh && <p style={{ color: T.textDim, fontSize: 11, marginTop: 4 }}>Derniere verification : {lastRefresh.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</p>}
-            <button onClick={startCamera} style={{ background: T.cardAlt, color: T.textMuted, border: "1px solid " + T.border, padding: "10px 20px", borderRadius: T.radiusSm, fontSize: 13, cursor: "pointer", fontFamily: T.font, marginTop: 16 }}>Reprendre un selfie</button>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
+              <button onClick={doRefresh} disabled={refreshing} style={{ background: T.accentDim, color: T.accent, border: "1px solid " + T.accent, padding: "8px 18px", borderRadius: T.radiusSm, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: T.font, opacity: refreshing ? 0.5 : 1 }}>
+                {refreshing ? "Recherche..." : "↻ Actualiser maintenant"}
+              </button>
+              <button onClick={startCamera} style={{ background: T.cardAlt, color: T.textMuted, border: "1px solid " + T.border, padding: "8px 18px", borderRadius: T.radiusSm, fontSize: 13, cursor: "pointer", fontFamily: T.font }}>Reprendre un selfie</button>
+            </div>
+            {lastRefresh && <p style={{ color: T.textDim, fontSize: 11, marginTop: 12 }}>Derniere verification : {lastRefresh.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</p>}
           </div>
         )}
 
@@ -259,32 +369,65 @@ export default function LiveEventPage({ slug, onNavigate }) {
 
         {matches.length > 0 && (
           <>
+            {/* En-tête résultats */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <span style={{ fontSize: 14, fontWeight: 600 }}>{matches.length} photo{matches.length > 1 ? "s" : ""} trouvee{matches.length > 1 ? "s" : ""}</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {refreshing && <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid " + T.border, borderTopColor: T.accent, animation: "spin 0.8s linear infinite" }} />}
-                {lastRefresh && <span style={{ fontSize: 11, color: T.textDim }}>MAJ {lastRefresh.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>}
+              <span style={{ fontSize: 14, fontWeight: 600 }}>
+                {matches.length} photo{matches.length > 1 ? "s" : ""} trouvee{matches.length > 1 ? "s" : ""}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {/* Bouton Actualiser maintenant */}
+                <button onClick={doRefresh} disabled={refreshing} style={{ background: "transparent", border: "none", cursor: refreshing ? "default" : "pointer", color: T.textMuted, fontSize: 12, fontFamily: T.font, display: "flex", alignItems: "center", gap: 4, padding: 0 }}>
+                  {refreshing
+                    ? <div style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid " + T.border, borderTopColor: T.accent, animation: "spin 0.8s linear infinite" }} />
+                    : <span style={{ fontSize: 14 }}>↻</span>
+                  }
+                  {lastRefresh && <span>{lastRefresh.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</span>}
+                </button>
+                {/* Sélectionner tout */}
+                <button onClick={selectAll} style={{ background: selectedPhotos.length === matches.length ? T.accentDim : "rgba(255,255,255,0.06)", border: "1px solid " + (selectedPhotos.length === matches.length ? T.accent : T.border), borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600, color: selectedPhotos.length === matches.length ? T.accent : T.textMuted, cursor: "pointer", fontFamily: T.font }}>
+                  {selectedPhotos.length === matches.length ? "✓ Tout désélectionner" : "☐ Tout sélectionner"}
+                </button>
               </div>
             </div>
+
+            {/* Grille photos */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 20 }}>
-              {matches.map((m) => (
-                <div key={m.id} onClick={() => togglePhoto(m.id)} style={{ position: "relative", borderRadius: T.radiusSm, overflow: "hidden", cursor: "pointer", aspectRatio: "1", border: "2px solid " + (selectedPhotos.includes(m.id) ? T.accent : "transparent") }}>
-                  <img src={m.watermarked_url || m.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                  <div style={{ position: "absolute", top: 4, right: 4, background: T.green, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>{Math.round(m.similarity * 100)}%</div>
-                  {selectedPhotos.includes(m.id) && (
-                    <div style={{ position: "absolute", top: 4, left: 4, width: 22, height: 22, borderRadius: "50%", background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+              {matches.map((m) => {
+                const isNew = newPhotoIds.has(m.id);
+                return (
+                  <div key={m.id} onClick={() => togglePhoto(m.id)} style={{
+                    position: "relative", borderRadius: T.radiusSm, overflow: "hidden",
+                    cursor: "pointer", aspectRatio: "1",
+                    border: "2px solid " + (selectedPhotos.includes(m.id) ? T.accent : isNew ? T.green : "transparent"),
+                    animation: isNew ? "photoNewPulse 0.8s ease 3" : "none",
+                    transition: "border-color 0.2s",
+                  }}>
+                    <img src={m.watermarked_url || m.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    {/* Badge "Nouveau" si nouvelle photo */}
+                    {isNew && (
+                      <div style={{ position: "absolute", top: 4, left: 4, background: T.green, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>
+                        NOUVEAU
+                      </div>
+                    )}
+                    {/* Coche sélection */}
+                    {selectedPhotos.includes(m.id) && (
+                      <div style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                      </div>
+                    )}
+                    {/* Prix dynamique */}
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 6px 4px", background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
+                      <span style={{ fontSize: 10, color: "#fff" }}>{pricing.price1} F</span>
                     </div>
-                  )}
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 6px 4px", background: "linear-gradient(transparent, rgba(0,0,0,0.7))" }}>
-                    <span style={{ fontSize: 10, color: "#fff" }}>200 F</span>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
+
             <button onClick={startCamera} style={{ width: "100%", padding: "10px", borderRadius: T.radiusSm, background: T.cardAlt, border: "1px solid " + T.border, color: T.textMuted, fontSize: 13, cursor: "pointer", fontFamily: T.font, marginBottom: 20 }}>
               Reprendre un selfie
             </button>
+
             {selectedPhotos.length > 0 && (
               <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: T.card, borderTop: "1px solid " + T.border, padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 100 }}>
                 <div>
@@ -306,7 +449,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
             <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: T.textMuted, fontSize: 12, textDecoration: "underline" }}>
               Contacter le photographe via WhatsApp
             </a>
-          <p style={{ color: T.textDim, fontSize: 11, marginTop: 8, textAlign: "center", maxWidth: 400, margin: "8px auto 0" }}>Si vous souhaitez que votre image soit retiree de cette galerie, contactez rapidement le photographe via WhatsApp.</p>
+            <p style={{ color: T.textDim, fontSize: 11, marginTop: 8, textAlign: "center", maxWidth: 400, margin: "8px auto 0" }}>Si vous souhaitez que votre image soit retiree de cette galerie, contactez rapidement le photographe via WhatsApp.</p>
           </div>
         )}
       </div>
