@@ -223,7 +223,40 @@ function LandingPage({ onNavigate, platform }) {
       </div>
 
 
-{/* Témoignages */}
+      {/* Pricing */}
+      <div style={{
+        padding: "60px 24px", borderTop: `1px solid ${T.border}`,
+        textAlign: "center",
+      }}>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Tarifs simples</h2>
+        <p style={{ color: T.textMuted, marginBottom: 36, fontSize: 14 }}>Pour les clients qui achètent les photos</p>
+        <div style={{
+          display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", maxWidth: 700,
+          margin: "0 auto",
+        }}>
+          {[
+            { photos: "1 photo", price: "200 FCFA" },
+            { photos: "6 photos", price: "500 FCFA", highlight: true },
+            { photos: "10+ photos", price: "1 000 FCFA" },
+          ].map((p, i) => (
+            <div key={i} style={{
+              flex: "1 1 180px", background: T.card,
+              border: `1px solid ${p.highlight ? T.accent : T.border}`,
+              borderRadius: T.radius, padding: "28px 20px",
+              boxShadow: p.highlight ? `0 0 30px ${T.accentDim}` : "none",
+            }}>
+              <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 8 }}>{p.photos}</div>
+              <div style={{
+                fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 700,
+                color: p.highlight ? T.accent : T.text,
+              }}>{p.price}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+
+      {/* Témoignages */}
       <div style={{
         padding: "80px 24px", borderTop: `1px solid ${T.border}`,
         textAlign: "center", background: T.bg,
@@ -289,40 +322,6 @@ function LandingPage({ onNavigate, platform }) {
                   <div style={{ fontSize: 12, color: T.textMuted }}>{t.role}</div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-
-
-      {/* Pricing */}
-      <div style={{
-        padding: "60px 24px", borderTop: `1px solid ${T.border}`,
-        textAlign: "center",
-      }}>
-        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, marginBottom: 8 }}>Tarifs simples</h2>
-        <p style={{ color: T.textMuted, marginBottom: 36, fontSize: 14 }}>Pour les clients qui achètent les photos</p>
-        <div style={{
-          display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap", maxWidth: 700,
-          margin: "0 auto",
-        }}>
-          {[
-            { photos: "1 photo", price: "200 FCFA" },
-            { photos: "6 photos", price: "500 FCFA", highlight: true },
-            { photos: "10+ photos", price: "1 000 FCFA" },
-          ].map((p, i) => (
-            <div key={i} style={{
-              flex: "1 1 180px", background: T.card,
-              border: `1px solid ${p.highlight ? T.accent : T.border}`,
-              borderRadius: T.radius, padding: "28px 20px",
-              boxShadow: p.highlight ? `0 0 30px ${T.accentDim}` : "none",
-            }}>
-              <div style={{ fontSize: 13, color: T.textMuted, marginBottom: 8 }}>{p.photos}</div>
-              <div style={{
-                fontFamily: T.fontDisplay, fontSize: 26, fontWeight: 700,
-                color: p.highlight ? T.accent : T.text,
-              }}>{p.price}</div>
             </div>
           ))}
         </div>
@@ -1001,59 +1000,6 @@ function PhotosTab({ token, events }) {
 
   const [duplicateWarning, setDuplicateWarning] = useState([]);
 
-  // ── Compression côté client (réduit taille avant envoi serveur) ──
-  const compressImage = (file, maxWidth = 3000, quality = 0.85) => {
-    return new Promise((resolve) => {
-      // Si le fichier est petit (< 2Mo), pas besoin de compresser
-      if (file.size < 2 * 1024 * 1024) {
-        resolve(file);
-        return;
-      }
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        // Si l'image est déjà petite, garder telle quelle
-        if (img.width <= maxWidth && img.height <= maxWidth && file.size < 5 * 1024 * 1024) {
-          resolve(file);
-          return;
-        }
-        const canvas = document.createElement("canvas");
-        let w = img.width;
-        let h = img.height;
-        if (w > maxWidth || h > maxWidth) {
-          if (w > h) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-          else { w = Math.round(w * maxWidth / h); h = maxWidth; }
-        }
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob(
-          (blob) => {
-            if (blob && blob.size < file.size) {
-              const compressed = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
-                type: "image/jpeg",
-                lastModified: file.lastModified,
-              });
-              console.log("Compressed: " + file.name + " " + (file.size / 1024 / 1024).toFixed(1) + "Mo -> " + (compressed.size / 1024 / 1024).toFixed(1) + "Mo");
-              resolve(compressed);
-            } else {
-              resolve(file); // Original plus petit, garder tel quel
-            }
-          },
-          "image/jpeg",
-          quality
-        );
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(file); // En cas d'erreur, envoyer l'original
-      };
-      img.src = url;
-    });
-  };
-
   const processFiles = useCallback((newFiles) => {
     const imgs = Array.from(newFiles).filter((f) => f.type.startsWith("image/"));
     const oversized = imgs.filter((f) => f.size > MAX_FILE_SIZE);
@@ -1103,9 +1049,7 @@ function PhotosTab({ token, events }) {
       const batch = pending.slice(i, i + 5);
       const formData = new FormData();
       formData.append("event_id", eventId);
-      // Compression côté client avant envoi
-      const compressedFiles = await Promise.all(batch.map((f) => compressImage(f.file)));
-      compressedFiles.forEach((f) => formData.append("photos", f));
+      batch.forEach((f) => formData.append("photos", f.file));
 
       batch.forEach((f) => {
         setFiles((prev) => prev.map((x) => x.id === f.id ? { ...x, status: "uploading", progress: 30 } : x));
@@ -1154,8 +1098,7 @@ function PhotosTab({ token, events }) {
     setFiles((prev) => prev.map((x) => x.id === fileItem.id ? { ...x, status: "uploading", progress: 30 } : x));
     const formData = new FormData();
     formData.append("event_id", selectedEvent);
-    const compressedRetry = await compressImage(fileItem.file);
-    formData.append("photos", compressedRetry);
+    formData.append("photos", fileItem.file);
     try {
       const res = await fetch(API + "/photos/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
       if (res.ok) {
@@ -1884,7 +1827,6 @@ function ClientPage({ slug, onNavigate }) {
   const [event, setEvent] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [showSelfie, setShowSelfie] = useState(false);
 const [selfieLoading, setSelfieLoading] = useState(false);
@@ -1943,25 +1885,10 @@ const [selfieLoading, setSelfieLoading] = useState(false);
 
 useEffect(() => {
     setLoading(true);
-    setNotFound(false);
     fetch(API + `/events/${slug || "demo"}/public`)
-      .then((r) => {
-        if (!r.ok) {
-          // Événement supprimé ou introuvable
-          setNotFound(true);
-          setLoading(false);
-          return null;
-        }
-        return r.json();
-      })
+      .then((r) => r.json())
       .then((d) => {
-        if (!d) return;
-        if (!d.event) {
-          setNotFound(true);
-          setLoading(false);
-          return;
-        }
-        var evt = d.event;
+        var evt = d.event || { name: "Événement démo", date: "2026-04-19" };
         setEvent(evt);
         setPhotographerPlan(evt.photographer_plan || 'free');
         setMobileMoneyEnabled(evt.mobile_money_enabled || false);
@@ -1975,7 +1902,7 @@ useEffect(() => {
           setLoading(false);
         }
       })
-      .catch(() => { setNotFound(true); setLoading(false); });
+      .catch(() => { setLoading(false); });
    fetch(API + "/photos/pricing").then(r => r.json()).then(d => setPricing(d)).catch(() => {});
   }, [slug]);
 
@@ -1983,50 +1910,6 @@ useEffect(() => {
     if (matchedIds === null || !matchedIds.includes(id)) return;
     setSelectedPhotos((prev) => prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]);
   };
-
-  // Écran galerie supprimée / introuvable
-  if (notFound) {
-    return (
-      <div style={{
-        minHeight: "100vh", background: T.bg, display: "flex",
-        alignItems: "center", justifyContent: "center", padding: 24,
-      }}>
-        <div style={{
-          maxWidth: 440, textAlign: "center", background: T.card,
-          border: "1px solid " + T.border, borderRadius: T.radius,
-          padding: "48px 32px",
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📷</div>
-          <h2 style={{
-            fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 700,
-            color: T.text, marginBottom: 12,
-          }}>
-            Galerie indisponible
-          </h2>
-          <p style={{
-            color: T.textMuted, fontSize: 14, lineHeight: 1.7,
-            marginBottom: 28,
-          }}>
-            Cette galerie n'est plus disponible. Elle a peut-être été supprimée par le photographe.
-          </p>
-          <p style={{
-            color: T.textMuted, fontSize: 13, lineHeight: 1.6,
-            marginBottom: 28, padding: "16px", background: T.cardAlt,
-            borderRadius: T.radiusSm, border: "1px solid " + T.border,
-          }}>
-            Pour retrouver vos photos, contactez directement le photographe de l'événement.
-          </p>
-          <button onClick={() => onNavigate("landing")} style={{
-            background: T.accent, color: "#fff", border: "none",
-            borderRadius: T.radiusSm, padding: "12px 28px", fontSize: 14,
-            fontWeight: 600, cursor: "pointer", fontFamily: T.font,
-          }}>
-            Retour à l'accueil
-          </button>
-        </div>
-      </div>
-    );
-  }
 const [paymentLoading, setPaymentLoading] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -2073,8 +1956,6 @@ const [paymentLoading, setPaymentLoading] = useState(false);
     }
   };
 const handleFreeDownload = async () => {
-    // Detecter iOS (Safari ne supporte pas a.download)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     try {
       const regRes = await fetch(API + "/photos/free-download", {
         method: "POST",
@@ -2083,39 +1964,24 @@ const handleFreeDownload = async () => {
       });
       const regData = await regRes.json();
       if (regRes.ok && regData.photos) {
-        if (isIOS) {
-          // iOS : ouvrir chaque photo dans un nouvel onglet
-          // L'utilisateur fait appui long > "Ajouter aux photos"
-          for (let i = 0; i < regData.photos.length; i++) {
-            var p = regData.photos[i];
-            window.open(p.original_url, "_blank");
-            // Petit delai entre chaque ouverture pour eviter le blocage popup
-            if (i < regData.photos.length - 1) {
-              await new Promise(function(r) { setTimeout(r, 600); });
-            }
+        for (let i = 0; i < regData.photos.length; i++) {
+          var p = regData.photos[i];
+          try {
+            var response = await fetch(p.original_url);
+            var blob = await response.blob();
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "fotokash-" + p.id + ".jpg";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+          } catch (err) {
+            console.error("Erreur telechargement:", err);
           }
-          alert("Photos ouvertes ! Appuyez longuement sur chaque image puis \"Ajouter aux photos\" pour les enregistrer dans votre galerie.");
-        } else {
-          // Desktop/Android : download classique via blob
-          for (let i = 0; i < regData.photos.length; i++) {
-            var p = regData.photos[i];
-            try {
-              var response = await fetch(p.original_url);
-              var blob = await response.blob();
-              var url = window.URL.createObjectURL(blob);
-              var a = document.createElement("a");
-              a.href = url;
-              a.download = "fotokash-" + p.id + ".jpg";
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              window.URL.revokeObjectURL(url);
-            } catch (err) {
-              console.error("Erreur telechargement:", err);
-            }
-          }
-          alert("Telechargement termine !");
         }
+        alert("Telechargement termine !");
       } else {
         alert(regData.error || "Erreur lors du telechargement.");
       }
@@ -2368,27 +2234,18 @@ function QrPhotoPage({ qrCode, onNavigate }) {
 
   var downloadPhoto = function() {
     if (!photo) return;
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    var photoUrl = photo.original_url || photo.watermarked_url;
-    if (isIOS) {
-      // iOS : ouvrir dans un nouvel onglet pour permettre "Ajouter aux photos"
-      window.open(photoUrl, "_blank");
-      alert("Appuyez longuement sur l\u0027image puis \"Ajouter aux photos\" pour l\u0027enregistrer dans votre galerie.");
-    } else {
-      // Desktop/Android : download via blob
-      fetch(photoUrl)
-        .then(function(r) { return r.blob(); })
-        .then(function(blob) {
-          var url = window.URL.createObjectURL(blob);
-          var a = document.createElement("a");
-          a.href = url;
-          a.download = "fotokash-" + photo.qr_code_id + ".jpg";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-        });
-    }
+    fetch(photo.original_url || photo.watermarked_url)
+      .then(function(r) { return r.blob(); })
+      .then(function(blob) {
+        var url = window.URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "fotokash-" + photo.qr_code_id + ".jpg";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      });
   };
 
   if (loading) return (
