@@ -343,7 +343,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
       {/* Notification nouvelles photos */}
       {newPhotosNotif && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 300, background: T.green, color: "#000", padding: "14px 20px", textAlign: "center", fontWeight: 700, fontSize: 15, fontFamily: T.font, animation: "slideDown 0.3s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <span style={{ fontSize: 20 }}>📸</span>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="6" width="16" height="13" rx="2.5" stroke="#000" strokeWidth="2"/><circle cx="10" cy="12.5" r="3" stroke="#000" strokeWidth="2"/><path d="M6 6V5a2 2 0 012-2h4a2 2 0 012 2v1" stroke="#000" strokeWidth="2"/><path d="M19 4l1.5 3.5L24 9l-3.5 1.5L19 14l-1.5-3.5L14 9l3.5-1.5Z" fill="#000" stroke="#000" strokeWidth="0.5"/></svg>
           {newPhotosNotif.count === 1 ? "1 nouvelle photo trouvee !" : `${newPhotosNotif.count} nouvelles photos trouvees !`}
         </div>
       )}
