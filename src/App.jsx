@@ -836,7 +836,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
       {/* Content */}
       <div style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
         {tab === "stats"   && <StatsTab token={token} user={user} onNavigate={(t) => { setTab(t); onNavigate("dashboard", { tab: t }); }} />}
-        {tab === "photos"  && <PhotosTab token={token} events={events} />}
+        {tab === "photos"  && <PhotosTab token={token} events={events} setEvents={setEvents} />}
         {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
         {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
         {tab === "account" && <AccountTab token={token} />}
@@ -971,7 +971,7 @@ function StatsTab({ token, user, onNavigate }) {
 }
 
 
-function PhotosTab({ token, events }) {
+function PhotosTab({ token, events, setEvents }) {
   const MAX_FILE_SIZE = 25 * 1024 * 1024;
   const MAX_FILES = 50;
 
