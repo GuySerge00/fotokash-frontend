@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
-Disallow: /api/
+Allow: /e/
+Disallow: /dashboard
 Disallow: /admin
+Disallow: /api/
+Disallow: /p/
+Disallow: /live/
 
 Sitemap: https://fotokash.com/sitemap.xml

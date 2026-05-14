@@ -1,3 +1,4 @@
+import SEOHead from './components/SEOHead';
 import AdminLayout from "./admin/AdminLayout";
 import LiveEventPage from "./LiveEventPage";
 import LegalPage from "./LegalPage";
@@ -2556,6 +2557,18 @@ function getPageTitle(s, props = {}) {
 }
 
 export default function FotoKashApp() {
+  // SEO: balise canonical dynamique
+  const seoConfig = (() => {
+    const p = typeof window !== 'undefined' ? window.location.pathname : '/';
+    if (p.startsWith('/dashboard') || p.startsWith('/admin')) return { noindex: true };
+    if (p.startsWith('/p/')) return { title: 'Telechargement Photo', noindex: true };
+    if (p.startsWith('/live/')) return { title: 'Evenement en direct', noindex: true };
+    if (p.startsWith('/e/')) return { title: 'Galerie Photos' };
+    if (p === '/login') return { title: 'Connexion Photographe' };
+    if (p === '/register') return { title: 'Inscription Photographe' };
+    return {};
+  })();
+
   const initState = urlToScreenProps(window.location.pathname);
   const [screen, setScreen] = useState(initState.screen);
   const [screenProps, setScreenProps] = useState(initState.props);
@@ -2629,6 +2642,7 @@ export default function FotoKashApp() {
 
   return (
     <>
+      <SEOHead {...seoConfig} />
       <style>{globalCSS}</style>
       {screen === "landing" && <LandingPage onNavigate={navigate} platform={platform} />}
       {screen === "auth" && <AuthScreen mode={screenProps.mode} onNavigate={navigate} onAuth={handleAuth} />}
