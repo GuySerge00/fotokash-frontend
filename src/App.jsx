@@ -1147,6 +1147,8 @@ function PhotosTab({ token, events }) {
     if (doneCount > 0) {
       const ev = events.find((e) => String(e.id) === String(selectedEvent));
       setUploadSummary({ count: doneCount, eventName: ev ? ev.name : "l'événement" });
+      // Mettre a jour le compteur photos_count en temps reel
+      setEvents((prev) => prev.map((e) => String(e.id) === String(selectedEvent) ? { ...e, photos_count: (parseInt(e.photos_count) || 0) + doneCount } : e));
     }
   };
 
