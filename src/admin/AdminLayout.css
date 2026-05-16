@@ -16,6 +16,10 @@
     margin-left: 0;
     padding: 16px;
     padding-bottom: 90px;
+    min-height: calc(100vh - 56px);
+  }
+  .admin-layout {
+    flex-direction: column;
   }
 }
 
