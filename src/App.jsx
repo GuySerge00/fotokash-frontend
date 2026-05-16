@@ -47,6 +47,8 @@ const globalCSS = `
   ::selection { background: ${T.accent}; color: white; }
   input, select, textarea { font-family: ${T.font}; }
   @media (max-width: 768px) {
+    .landing-nav { padding: 12px 14px !important; }
+    .landing-nav button { padding: 8px 14px !important; font-size: 12px !important; }
     .desktop-tab-bar { display: none !important; }
     .mobile-logout-btn { display: flex !important; }
     .desktop-header-extras { display: none !important; }
@@ -149,9 +151,9 @@ function LandingPage({ onNavigate, platform }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
       {/* Nav */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        padding: "20px 32px", borderBottom: `1px solid ${T.border}`,
+        padding: "16px 20px", borderBottom: `1px solid ${T.border}`, flexWrap: "wrap", gap: 10,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
