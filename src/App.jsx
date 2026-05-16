@@ -48,12 +48,14 @@ const globalCSS = `
   input, select, textarea { font-family: ${T.font}; }
   @media (max-width: 768px) {
     .desktop-tab-bar { display: none !important; }
+    .mobile-logout-btn { display: flex !important; }
     .desktop-header-extras { display: none !important; }
     .dashboard-content { padding: 16px !important; padding-bottom: 90px !important; }
     .header-main { padding: 12px 16px !important; }
   }
   @media (min-width: 769px) {
     .mobile-bottom-nav { display: none !important; }
+    .mobile-logout-btn { display: none !important; }
   }
 `;
 
@@ -812,6 +814,14 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
             {Icon.LogOut(14)} Déconnexion
           </button>
         </div>
+
+        <button className="mobile-logout-btn" onClick={onLogout} style={{
+          background: "none", border: "none", color: T.textMuted,
+          cursor: "pointer", display: "none", alignItems: "center",
+          fontSize: 12, padding: 6,
+        }}>
+          {Icon.LogOut(18)}
+        </button>
       </header>
 
       {/* Tab bar */}
