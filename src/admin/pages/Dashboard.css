@@ -224,6 +224,20 @@
 }
 @media (max-width: 768px) {
   .dashboard { padding: 0; }
+  .dashboard-header { margin-bottom: 16px; flex-direction: column; gap: 12px; }
+  .dashboard-title { font-size: 20px; }
+  .dashboard-subtitle { font-size: 12px; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+  .kpi-card { padding: 14px; }
+  .kpi-card:last-child { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: space-between; }
+  .kpi-card:last-child .kpi-content { flex-direction: row; align-items: center; gap: 12px; }
+  .kpi-value { font-size: 22px; }
+  .kpi-icon { width: 30px; height: 30px; font-size: 14px; }
+  .dashboard-bottom { grid-template-columns: 1fr; gap: 10px; }
+  .chart-card, .sales-card { padding: 14px; }
+  .period-selector { flex-wrap: nowrap; }
+  .period-btn { padding: 6px 10px; font-size: 11px; }
+}
   .dashboard-header { margin-bottom: 16px; }
   .dashboard-title { font-size: 20px; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }

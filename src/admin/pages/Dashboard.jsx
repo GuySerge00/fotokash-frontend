@@ -9,8 +9,8 @@ const formatFCFA = (amount) => {
 
 const periods = [
   { key: 'today', label: "Aujourd'hui" },
-  { key: '7d', label: '7 jours' },
-  { key: '30d', label: '30 jours' },
+  { key: '7d', label: '7j' },
+  { key: '30d', label: '30j' },
 ];
 
 const Dashboard = ({ token }) => {
@@ -94,7 +94,7 @@ const Dashboard = ({ token }) => {
       </div>
 
       {globalStats && (
-        <div style={{ background: "#141419", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", display: "inline-flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div style={{ background: "#141419", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, marginBottom: 16, width: "100%", justifyContent: "space-between" }}>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#FFB826" }}>{Number(globalStats.visitors_count).toLocaleString("fr-FR")}</div>
           <div style={{ fontSize: 12, color: "#8888A0" }}>Visiteurs total</div>
         </div>
