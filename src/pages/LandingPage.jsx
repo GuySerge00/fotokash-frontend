@@ -4,29 +4,6 @@ import { Icon } from "../utils/icons";
 import { Btn } from "../components/Btn";
 
 
-function LandingStats() {
-  const [stats, setStats] = useState(null);
-  useEffect(() => {
-    fetch(API + "/live/stats/global").then(r => r.json()).then(d => setStats(d.stats)).catch(() => {});
-  }, []);
-  if (!stats) return null;
-  const items = [
-    { value: stats.photographers_count, label: "Photographes" },
-    { value: stats.events_count, label: "Evenements" },
-    { value: stats.photos_count, label: "Photos" },
-    { value: stats.visitors_count, label: "Invites satisfaits" },
-  ];
-  return (
-    <div style={{ padding: "40px 24px", borderTop: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "center", gap: 40, flexWrap: "wrap" }}>
-      {items.map((item, i) => (
-        <div key={i} style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: 28, fontWeight: 700, color: T.accent }}>{Number(item.value).toLocaleString("fr-FR")}+</div>
-          <div style={{ fontSize: 12, color: T.textMuted, marginTop: 4 }}>{item.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
 export default function LandingPage({ onNavigate, platform }) {
   return (
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -87,9 +64,10 @@ export default function LandingPage({ onNavigate, platform }) {
             Photographe événementiel en Côte d'Ivoire ? Uploadez vos photos, laissez la
             reconnaissance faciale faire le tri, et vendez via Mobile Money.
           </p>
+          <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 4 }}>Inscription gratuite. Aucune carte bancaire requise.</p>
           <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
             <Btn onClick={() => onNavigate("auth", { mode: "signup" })} style={{ padding: "14px 32px", fontSize: 15 }}>
-              Commencer gratuitement {Icon.ArrowRight(16)}
+              Créer mon compte gratuitement {Icon.ArrowRight(16)}
             </Btn>
             </div>
         </div>
@@ -115,6 +93,41 @@ export default function LandingPage({ onNavigate, platform }) {
           ))}
         </div>
       </div>
+
+      {/* Comment ça marche */}
+      <div style={{
+        padding: "80px 24px", borderTop: `1px solid ${T.border}`,
+        textAlign: "center",
+      }}>
+        <div style={{
+          color: T.accent, fontSize: 12, fontWeight: 700,
+          marginBottom: 16, letterSpacing: "0.1em",
+        }}>COMMENT ÇA MARCHE</div>
+        <h2 style={{ fontFamily: T.fontDisplay, fontSize: 36, fontWeight: 700, marginBottom: 48, color: T.text }}>
+          3 étapes. <span style={{ color: T.accent }}>Zéro</span> complication.
+        </h2>
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 20, maxWidth: 800, margin: "0 auto",
+        }}>
+          {[
+            { step: "Étape 1", title: "Uploadez vos photos", desc: "Glissez-déposez vos photos d événement. Traitement facial automatique.", color: T.accent, icon: Icon.Upload(22) },
+            { step: "Étape 2", title: "Vos clients se retrouvent", desc: "Un selfie suffit. Leurs photos sont identifiées en 3 secondes.", color: T.green, icon: Icon.Camera(22) },
+            { step: "Étape 3", title: "Vous êtes payé", desc: "Paiement Orange Money, MTN MoMo ou Wave. Direct sur votre compte.", color: T.gold, icon: Icon.CreditCard(22) },
+          ].map((s, i) => (
+            <div key={i} style={{
+              background: T.card, border: `1px solid ${T.border}`,
+              borderRadius: T.radius, padding: "32px 24px", textAlign: "center",
+            }}>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: s.color + "18", color: s.color, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>{s.icon}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: s.color, marginBottom: 8 }}>{s.step}</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 8 }}>{s.title}</div>
+              <div style={{ fontSize: 13, color: T.textMuted, lineHeight: 1.6 }}>{s.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Stats live */}
 
 
 {/* Témoignages */}
@@ -221,6 +234,7 @@ export default function LandingPage({ onNavigate, platform }) {
           ))}
         </div>
       </div>
+
 
       {/* Footer */}
       <footer style={{
