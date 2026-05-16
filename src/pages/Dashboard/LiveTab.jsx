@@ -34,8 +34,9 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
           setDashData(d);
           setLastUpdated(new Date());
           const vc = d?.stats?.visitors_count || 0;
+          const newVisitors = vc - prevVisitorCount;
           setPrevVisitorCount(vc);
-          setActivityHistory(prev => [...prev.slice(1), vc]);
+          setActivityHistory(prev => [...prev.slice(1), prevVisitorCount > 0 ? newVisitors : 0]);
         })
         .catch(() => {});
     };
