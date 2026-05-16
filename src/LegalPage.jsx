@@ -33,15 +33,14 @@ const cguContent = [
 const confidentialiteContent = [
   { title: "Article 1 - Responsable du traitement", text: "Le responsable du traitement est FotoKash, base a Abidjan, Cote d'Ivoire. Site web : fotokash.com." },
   { title: "Article 2 - Donnees collectees", text: "Photographes : nom, email, telephone, mot de passe (chiffre). Invites : selfie (temporaire), embedding facial (biometrique), numero de telephone (paiement). Photos : images, metadonnees EXIF, embeddings des visages detectes." },
-  { title: "Article 3 - Reconnaissance faciale", text: "Technologie ArcFace/InsightFace fonctionnant localement sur nos serveurs. Le selfie est supprime immediatement apres extraction. L'embedding est un vecteur de 512 nombres - il est impossible de reconstruire un visage. Aucune donnee faciale n'est envoyee a des services IA externes (Google, Amazon, Microsoft, etc.)." },
+  { title: "Article 3 - Reconnaissance faciale", text: "Technologie de reconnaissance faciale fonctionnant localement sur nos serveurs. Le selfie est supprime immediatement apres extraction. L'embedding est un vecteur de 512 nombres - il est impossible de reconstruire un visage. Aucune donnee faciale n'est envoyee a des services IA externes (Google, Amazon, Microsoft, etc.)." },
   { title: "Article 4 - Finalites du traitement", text: "Gestion des comptes (base : contrat). Reconnaissance faciale (base : consentement explicite). Paiement Mobile Money (base : contrat). Statistiques anonymisees (base : interet legitime). Securite de la Plateforme (base : interet legitime)." },
-  { title: "Article 5 - Duree de conservation", text: "Selfie : supprime IMMEDIATEMENT. Embedding visiteur (Mode Live) : 30 jours maximum. Embeddings des photos : duree de vie de la photo. Compte Photographe : duree d'utilisation + 30 jours. Donnees de paiement : 5 ans (obligation legale). Logs de connexion : 6 mois." },
+  { title: "Article 5 - Duree de conservation", text: "Selfie : supprime IMMEDIATEMENT. Embedding visiteur (Mode Live) : 3 jours maximum. Embeddings des photos : duree de vie de la photo. Compte Photographe : duree d'utilisation + 30 jours. Donnees de paiement : 5 ans (obligation legale). Logs de connexion : 6 mois." },
   { title: "Article 6 - Securite des donnees", text: "Chiffrement SSL/TLS. Mots de passe hashes (bcrypt). Authentification JWT. Pare-feu Nginx. Rate limiting. Acces serveur par cles SSH. Sauvegardes regulieres. IA 100% locale - aucune donnee faciale ne quitte nos serveurs." },
-  { title: "Article 7 - Partage avec des tiers", text: "Nous ne vendons jamais vos donnees. Prestataires : Cloudinary (stockage photos, pas de donnees faciales), Operateurs Mobile Money (telephone + montant uniquement), Hostinger (hebergement technique). Aucun prestataire n'a acces aux embeddings faciaux." },
-  { title: "Article 8 - Vos droits", text: "Droit d'acces, de rectification, de suppression, d'opposition, de limitation, de retrait du consentement, de portabilite. Pour exercer vos droits, contactez-nous. Delai de reponse : 30 jours maximum." },
-  { title: "Article 9 - Droit a l'image", text: "Toute personne peut demander le retrait de sa photo en contactant le Photographe via WhatsApp. Delai de traitement : 72 heures. Si le Photographe ne repond pas, contactez directement FotoKash." },
-  { title: "Article 10 - Cookies", text: "Token JWT pour la session des Photographes. Aucun cookie tiers. Aucun pixel de suivi. Pas de Google Analytics ni Facebook Pixel. Les Invites n'ont aucun cookie apres leur visite." },
-  { title: "Article 11 - Protection des mineurs", text: "La Plateforme n'est pas destinee aux moins de 16 ans. Les Photographes sont responsables d'obtenir le consentement parental pour les photos d'enfants." },
+  { title: "Article 7 - Vos droits", text: "Droit d'acces, de rectification, de suppression, d'opposition, de limitation, de retrait du consentement, de portabilite. Pour exercer vos droits, contactez-nous. Delai de reponse : 30 jours maximum." },
+  { title: "Article 8 - Droit a l'image", text: "Toute personne peut demander le retrait de sa photo en contactant le Photographe via WhatsApp. Delai de traitement : 72 heures. Si le Photographe ne repond pas, contactez directement FotoKash." },
+  { title: "Article 9 - Cookies", text: "Token JWT pour la session des Photographes. Aucun cookie tiers. Aucun pixel de suivi. Pas de Google Analytics ni Facebook Pixel. Les Invites n'ont aucun cookie apres leur visite." },
+  { title: "Article 10 - Protection des mineurs", text: "La Plateforme n'est pas destinee aux moins de 16 ans. Les Photographes sont responsables d'obtenir le consentement parental pour les photos d'enfants." },
 ];
 
 export default function LegalPage({ tab: initialTab, onNavigate }) {
@@ -72,7 +71,7 @@ export default function LegalPage({ tab: initialTab, onNavigate }) {
         </div>
 
         <h1 style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 700, marginBottom: 8 }}>{title}</h1>
-        <p style={{ color: T.textDim, fontSize: 12, marginBottom: 32 }}>Derniere mise a jour : 1er mai 2026</p>
+        <p style={{ color: T.textDim, fontSize: 12, marginBottom: 32 }}>Derniere mise a jour : 15 mai 2026</p>
 
         {content.map((section, i) => (
           <div key={i} style={{ marginBottom: 24 }}>

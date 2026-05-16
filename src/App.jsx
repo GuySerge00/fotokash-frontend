@@ -46,6 +46,15 @@ const globalCSS = `
   body { background: ${T.bg}; color: ${T.text}; font-family: ${T.font}; }
   ::selection { background: ${T.accent}; color: white; }
   input, select, textarea { font-family: ${T.font}; }
+  @media (max-width: 768px) {
+    .desktop-tab-bar { display: none !important; }
+    .desktop-header-extras { display: none !important; }
+    .dashboard-content { padding: 16px !important; padding-bottom: 90px !important; }
+    .header-main { padding: 12px 16px !important; }
+  }
+  @media (min-width: 769px) {
+    .mobile-bottom-nav { display: none !important; }
+  }
 `;
 
 // â”€â”€â”€ Icons (inline SVG) â”€â”€â”€
@@ -761,7 +770,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
       )}
 
       {/* Top bar */}
-      <header style={{
+      <header className="header-main" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "16px 28px", borderBottom: `1px solid ${T.border}`,
         background: T.card,
@@ -776,7 +785,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="desktop-header-extras" style={{ display: "flex", alignItems: "center", gap: 16 }}>
           {liveCount > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
               <span style={{ width: 7, height: 7, borderRadius: "50%", background: T.green, display: "inline-block", animation: "pulse 1.5s infinite" }} />
@@ -806,7 +815,7 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
       </header>
 
       {/* Tab bar */}
-      <div style={{
+      <div className="desktop-tab-bar" style={{
         display: "flex", gap: 4, padding: "12px 28px",
         borderBottom: `1px solid ${T.border}`, background: T.card,
         overflowX: "auto",
@@ -834,12 +843,36 @@ function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab 
       </div>
 
       {/* Content */}
-      <div style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
+      <div className="dashboard-content" style={{ padding: "28px", maxWidth: 1100, margin: "0 auto" }}>
         {tab === "stats"   && <StatsTab token={token} user={user} onNavigate={(t) => { setTab(t); onNavigate("dashboard", { tab: t }); }} />}
         {tab === "photos"  && <PhotosTab token={token} events={events} setEvents={setEvents} />}
         {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
         {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
         {tab === "account" && <AccountTab token={token} />}
+      </div>
+      {/* BOTTOM NAV MOBILE */}
+      <div className="mobile-bottom-nav" style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: T.card, borderTop: `1px solid ${T.border}`,
+        display: "flex", justifyContent: "space-around", alignItems: "center",
+        padding: "8px 0 20px", zIndex: 100,
+        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+      }}>
+        {tabs.map((t) => {
+          const isActive = tab === t.id;
+          return (
+            <button key={t.id} onClick={() => { setTab(t.id); onNavigate("dashboard", { tab: t.id }); }} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+              background: "none", border: "none", cursor: "pointer",
+              padding: "4px 12px", position: "relative", fontFamily: T.font,
+            }}>
+              <div style={{ color: isActive ? T.accent : T.textMuted, transition: "color 0.2s" }}>{t.icon}</div>
+              <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? T.accent : T.textMuted, transition: "color 0.2s" }}>{t.label}</span>
+              {isActive && <div style={{ width: 4, height: 4, borderRadius: "50%", background: T.accent, marginTop: -1 }} />}
+              {t.badge > 0 && <div style={{ position: "absolute", top: 0, right: 6, width: 14, height: 14, borderRadius: "50%", background: T.red, color: "#fff", fontSize: 8, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center" }}>{t.badge}</div>}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
