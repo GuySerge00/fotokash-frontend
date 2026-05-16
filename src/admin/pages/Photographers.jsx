@@ -124,6 +124,7 @@ const Photographers = ({ token, showToast }) => {
   };
 
   const viewDetail = async (id) => {
+    if (selected === id) { setSelected(null); setDetail(null); return; }
     setSelected(id);
     setDetailLoading(true);
     try {

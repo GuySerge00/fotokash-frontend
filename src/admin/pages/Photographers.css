@@ -35,11 +35,11 @@
 .filter-btn:hover { color: #a0a0b5; }
 .filter-btn.active { background: rgba(232,89,60,0.12); color: #E8593C; }
 
-.photo-layout { display: flex; gap: 16px; align-items: flex-start; }
+.photo-layout { display: flex; flex-direction: column; gap: 16px; }
 
 .photo-list-container { flex: 1; min-width: 0; }
 
-.photo-list { display: flex; flex-direction: column; gap: 10px; }
+.photo-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 
 .photo-card {
   background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
@@ -69,7 +69,7 @@
 .photo-status-badge.inactive { color: #ef4444; background: rgba(239,68,68,0.1); }
 .photo-status-badge.large { font-size: 12px; padding: 4px 14px; margin-top: 8px; }
 
-.photo-card-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.photo-card-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
 
 .photo-stat { text-align: center; }
 .photo-stat-value { display: block; font-size: 14px; font-weight: 600; color: #f0f0f5; }
@@ -81,7 +81,7 @@
 
 /* Detail panel */
 .photo-detail-panel {
-  width: 360px; flex-shrink: 0; background: rgba(255,255,255,0.02);
+  width: 100%; background: rgba(255,255,255,0.02);
   border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 24px;
   position: sticky; top: 28px;
 }
@@ -188,4 +188,17 @@
 .plan-change-btn.current {
   background: rgba(232,89,60,0.1); color: #E8593C; border-color: #E8593C;
   cursor: default;
+}.photo-stat {
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  padding: 8px 4px;
+}
+.photo-card-stats {
+  margin-bottom: 10px;
+}
+.photo-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
 }
