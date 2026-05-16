@@ -13,7 +13,7 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
   const [showStopConfirm, setShowStopConfirm] = useState(false);
   const [uploadingLive, setUploadingLive] = useState(false);
   const [uploadDone, setUploadDone] = useState(0);
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => localStorage.getItem('fotokash_live_sound') === 'true');
   const [activityHistory, setActivityHistory] = useState([0,0,0,0,0,0,0]);
   const [prevVisitorCount, setPrevVisitorCount] = useState(0);
   const liveUploadRef = useRef(null);
