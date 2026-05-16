@@ -162,7 +162,7 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
             <input ref={liveUploadRef} type="file" accept="image/*" multiple onChange={handleLiveUpload} style={{ display: "none" }} />
             {Icon.Upload(14)} {uploadingLive ? (uploadDone + " envoyee" + (uploadDone > 1 ? "s" : "") + "...") : "Ajouter photos"}
           </label>
-          <button onClick={() => setSoundEnabled(!soundEnabled)} style={{
+          <button onClick={() => { const next = !soundEnabled; setSoundEnabled(next); localStorage.setItem("fotokash_live_sound", String(next)); }} style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             background: soundEnabled ? "rgba(74,222,128,0.12)" : "rgba(255,255,255,0.04)",
             border: "1px solid " + (soundEnabled ? "rgba(74,222,128,0.3)" : T.border),
