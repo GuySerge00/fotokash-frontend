@@ -178,7 +178,7 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10, marginBottom: 20 }}>
         {kpiItems.map((s, i) => (
           <div key={i} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "18px 16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", marginBottom: 8 }}>
