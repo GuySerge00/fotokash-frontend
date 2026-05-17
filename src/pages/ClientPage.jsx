@@ -344,7 +344,7 @@ const handleFreeDownload = async () => {
             Foto<span style={{ color: T.accent }}>Kash</span>
           </span>
         </div>
-        <Btn variant="ghost" onClick={startSelfie} style={{ padding: "8px 14px", fontSize: 12 }}>
+        <Btn onClick={startSelfie} style={{ padding: "8px 14px", fontSize: 12, background: T.accent, color: "#fff", borderRadius: T.radiusSm, fontWeight: 700, animation: "pulse 2s infinite" }}>
           {Icon.Search(14)} Me retrouver par selfie
         </Btn>
       </header>
@@ -458,7 +458,7 @@ const handleFreeDownload = async () => {
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                   <span style={{ fontSize: 13, color: T.textMuted }}>{photos.length} photo{photos.length > 1 ? "s" : ""} disponible{photos.length > 1 ? "s" : ""}</span>
                   <button onClick={() => {
-                    if (matchedIds === null) return;
+                    if (matchedIds === null) { startSelfie(); return; }
                     if (matchedIds !== null && selectedPhotos.length === matchedIds.length) {
                       setSelectedPhotos([]);
                     } else {
