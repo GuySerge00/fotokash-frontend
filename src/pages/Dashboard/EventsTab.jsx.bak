@@ -85,15 +85,6 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
     return new Intl.NumberFormat("fr-FR").format(v) + " F";
   };
 
-  // Tag d'expiration
-  const expirationTag = (e) => {
-    if (e.days_remaining === null || e.days_remaining === undefined) return null;
-    if (e.days_remaining <= 0) return { label: 'Expiré', bg: 'rgba(239,68,68,0.15)', color: '#ef4444' };
-    if (e.days_remaining <= 3) return { label: e.days_remaining + 'j restant' + (e.days_remaining > 1 ? 's' : ''), bg: 'rgba(239,68,68,0.15)', color: '#ef4444' };
-    if (e.days_remaining <= 5) return { label: e.days_remaining + 'j restants', bg: 'rgba(234,179,8,0.15)', color: '#eab308' };
-    return null;
-  };
-
   return (
     <div onClick={() => setMenuOpen(null)}>
       {/* Modal suppression */}
@@ -170,7 +161,6 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, fontSize: 15 }}>{e.name}</span>
                       {e.is_live && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(74,222,128,0.15)", color: T.green }}>● EN DIRECT</span>}
-                      {expirationTag(e) && <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: expirationTag(e).bg, color: expirationTag(e).color }}>{expirationTag(e).label}</span>}
                     </div>
                   )}
                   <div style={{ fontSize: 12, color: T.textMuted, display: "flex", gap: 10, flexWrap: "wrap" }}>
