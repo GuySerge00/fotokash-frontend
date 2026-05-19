@@ -24,6 +24,7 @@
 }
 
 .period-selector {
+  position: relative;
   display: flex;
   gap: 2px;
   background: rgba(255, 255, 255, 0.04);
@@ -236,5 +237,6 @@
   .dashboard-bottom { grid-template-columns: 1fr; gap: 10px; }
   .chart-card, .sales-card { padding: 14px; }
   .period-selector { flex-wrap: nowrap; }
+  position: relative;
   .period-btn { padding: 6px 10px; font-size: 11px; }
 }

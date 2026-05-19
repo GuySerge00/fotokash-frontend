@@ -11,10 +11,18 @@ const periods = [
   { key: 'today', label: "Aujourd'hui" },
   { key: '7d', label: '7j' },
   { key: '30d', label: '30j' },
+  { key: 'custom', label: <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:4,verticalAlign:'middle'}}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Période</> },
 ];
 
 const Dashboard = ({ token }) => {
   const [period, setPeriod] = useState('today');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [selectStep, setSelectStep] = useState(0);
+  const [hoverDay, setHoverDay] = useState(null);
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [recentSales, setRecentSales] = useState([]);
@@ -31,7 +39,7 @@ const Dashboard = ({ token }) => {
       };
 
       const [statsRes, chartRes, salesRes] = await Promise.all([
-        fetch(`${API_URL}/admin/dashboard/stats?period=${period}`, { headers }),
+        fetch(`${API_URL}/admin/dashboard/stats?period=${period}${period==="custom" && startDate && endDate ? `&startDate=${startDate}&endDate=${endDate}` : ""}`, { headers }),
         fetch(`${API_URL}/admin/dashboard/revenue-chart?days=7`, { headers }),
         fetch(`${API_URL}/admin/dashboard/recent-sales`, { headers })
       ]);
@@ -60,9 +68,89 @@ const Dashboard = ({ token }) => {
   useEffect(() => {
     fetchDashboard();
     fetch(API_URL + '/live/stats/global').then(r => r.json()).then(d => setGlobalStats(d.stats)).catch(() => {});
-  }, [period, refreshKey]);
+  }, [period, startDate, endDate, refreshKey]);
 
   const maxRevenue = Math.max(...chartData.map(d => d.revenue), 1);
+
+  const daysInMonth = (m, y) => new Date(y, m + 1, 0).getDate();
+  const firstDayOfMonth = (m, y) => new Date(y, m, 1).getDay();
+  const fmtD = (y, m, d) => y + '-' + String(m+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+  const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+  const handleDayClick = (day) => {
+    const clicked = fmtD(calYear, calMonth, day);
+    if (selectStep === 0) {
+      setStartDate(clicked);
+      setEndDate('');
+      setSelectStep(1);
+    } else {
+      if (clicked < startDate) {
+        setEndDate(startDate);
+        setStartDate(clicked);
+      } else {
+        setEndDate(clicked);
+      }
+      setSelectStep(0);
+      setShowCalendar(false);
+      setPeriod('custom');
+    }
+  };
+
+  const handleDayDblClick = (day) => {
+    const clicked = fmtD(calYear, calMonth, day);
+    setStartDate(clicked);
+    setEndDate(clicked);
+    setSelectStep(0);
+    setShowCalendar(false);
+    setPeriod('custom');
+  };
+
+  const isInRange = (day) => {
+    if (!startDate) return false;
+    const d = fmtD(calYear, calMonth, day);
+    if (selectStep === 1 && hoverDay) {
+      const hd = fmtD(calYear, calMonth, hoverDay);
+      const lo = hd < startDate ? hd : startDate;
+      const hi = hd < startDate ? startDate : hd;
+      return d >= lo && d <= hi;
+    }
+    if (!endDate) return d === startDate;
+    return d >= startDate && d <= endDate;
+  };
+  const isStart = (day) => fmtD(calYear, calMonth, day) === startDate;
+  const isEnd = (day) => fmtD(calYear, calMonth, day) === endDate;
+
+  const prevMonth = () => { if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); } else setCalMonth(calMonth - 1); };
+  const nextMonth = () => { if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); } else setCalMonth(calMonth + 1); };
+
+  const renderCalendar = () => {
+    const days = daysInMonth(calMonth, calYear);
+    const first = firstDayOfMonth(calMonth, calYear);
+    const cells = [];
+    for (let i = 0; i < (first === 0 ? 6 : first - 1); i++) cells.push(<div key={'e'+i} />);
+    for (let d = 1; d <= days; d++) {
+      const inRange = isInRange(d);
+      const start = isStart(d);
+      const end = isEnd(d);
+      cells.push(
+        <div key={d}
+          onClick={() => handleDayClick(d)}
+          onDoubleClick={() => handleDayDblClick(d)}
+          onMouseEnter={() => { if (selectStep === 1) setHoverDay(d); }}
+          onMouseLeave={() => setHoverDay(null)}
+          style={{
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: start || end ? 8 : 0,
+            background: start || end ? '#E8593C' : inRange ? 'rgba(232,89,60,0.15)' : 'transparent',
+            color: start || end ? '#fff' : inRange ? '#E8593C' : '#ccc',
+            cursor: 'pointer', fontSize: 13, fontWeight: start || end ? 700 : 400,
+            transition: 'all 0.15s'
+          }}
+        >{d}</div>
+      );
+    }
+    return cells;
+  };
 
   return (
     <div className="dashboard">
@@ -84,12 +172,34 @@ const Dashboard = ({ token }) => {
             <button
               key={p.key}
               className={`period-btn ${period === p.key ? 'active' : ''}`}
-              onClick={() => setPeriod(p.key)}
+              onClick={() => { if (p.key === 'custom') { setShowCalendar(!showCalendar); setSelectStep(0); } else { setPeriod(p.key); setShowCalendar(false); } }}
             >
               {p.label}
             </button>
           ))}
           </div>
+          {period === "custom" && startDate && endDate && (
+            <div style={{ fontSize: 11, color: "#E8593C", marginTop: 4, textAlign: "right" }}>
+              {startDate === endDate ? startDate : `${startDate} → ${endDate}`}
+            </div>
+          )}
+          {showCalendar && (
+            <div style={{ position: "absolute", right: 0, top: 45, background: "#1a1a24", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: 16, zIndex: 300, boxShadow: "0 12px 40px rgba(0,0,0,0.6)", minWidth: 280 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <button onClick={prevMonth} style={{ background: "none", border: "none", color: "#8888A0", cursor: "pointer", fontSize: 16, padding: "4px 8px" }}>◀</button>
+                <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>{monthNames[calMonth]} {calYear}</span>
+                <button onClick={nextMonth} style={{ background: "none", border: "none", color: "#8888A0", cursor: "pointer", fontSize: 16, padding: "4px 8px" }}>▶</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 32px)", gap: 2, justifyContent: "center", marginBottom: 8 }}>
+                {['Lu','Ma','Me','Je','Ve','Sa','Di'].map(d => <div key={d} style={{ width: 32, textAlign: "center", fontSize: 10, color: "#8888A0", fontWeight: 600 }}>{d}</div>)}
+                {renderCalendar()}
+              </div>
+              {selectStep === 1 && <div style={{ fontSize: 11, color: "#E8593C", textAlign: "center", marginTop: 8 }}>Sélectionnez la date de fin</div>}
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 8 }}>
+                <button onClick={() => { setShowCalendar(false); setSelectStep(0); }} style={{ background: "rgba(255,255,255,0.06)", border: "none", borderRadius: 6, padding: "4px 12px", color: "#8888A0", fontSize: 11, cursor: "pointer" }}>Fermer</button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -119,7 +229,7 @@ const Dashboard = ({ token }) => {
           <div className="kpi-content">
             <span className="kpi-label">PHOTOS VENDUES</span>
             <span className="kpi-value">{stats ? stats.photos.total : '—'}</span>
-            <span className="kpi-unit">{period === 'today' ? "aujourd'hui" : `sur ${period}`}</span>
+            <span className="kpi-unit">{period === 'today' ? "aujourd'hui" : period === 'custom' && startDate && endDate ? `du ${startDate} au ${endDate}` : `sur ${period}`}</span>
           </div>
           {stats && (
             <span className={`kpi-change ${stats.photos.change >= 0 ? 'positive' : 'negative'}`}>
