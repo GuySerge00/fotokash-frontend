@@ -7,6 +7,7 @@ export const TITLES = {
   "dashboard/events": "Événements - FotoKash",
   "dashboard/photos": "Photos - FotoKash",
   "dashboard/live": "Live - FotoKash",
+  "dashboard/earnings": "Revenus - FotoKash",
   "dashboard/account": "Mon compte - FotoKash",
   legal: "Mentions légales - FotoKash",
   admin: "Admin - FotoKash",

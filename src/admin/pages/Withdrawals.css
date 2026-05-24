@@ -1,0 +1,4 @@
+.withdrawals-page { animation: fadeUp 0.3s ease; }
+.wd-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.wd-title { font-size: 24px; font-weight: 800; color: #F0F0F5; margin: 0; }
+.wd-subtitle { font-size: 13px; color: #8888A0; margin: 4px 0 0; }

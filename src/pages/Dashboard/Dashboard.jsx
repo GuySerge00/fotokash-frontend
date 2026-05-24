@@ -6,6 +6,7 @@ import PhotosTab from "./PhotosTab";
 import LiveTab from "./LiveTab";
 import EventsTab from "./EventsTab";
 import AccountTab from "./AccountTab";
+import EarningsTab from "./EarningsTab";
 
 
 export default function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab }) {
@@ -47,6 +48,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
     { id: "photos",  label: "Photos",      icon: Icon.Image(16) },
     { id: "events",  label: "Événements",  icon: Icon.Calendar(16) },
     { id: "live",    label: "Live",        icon: Icon.Phone(16), badge: liveCount },
+    { id: "earnings", label: "Revenus",    icon: Icon.CreditCard(16) },
     { id: "account", label: "Compte",      icon: Icon.Users(16) },
   ];
 
@@ -147,6 +149,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
         {tab === "photos"  && <PhotosTab token={token} events={events} setEvents={setEvents} />}
         {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
         {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
+        {tab === "earnings" && <EarningsTab token={token} />}
         {tab === "account" && <AccountTab token={token} />}
       </div>
       {/* BOTTOM NAV MOBILE */}
