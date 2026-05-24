@@ -5,7 +5,7 @@ const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const settingGroups = {
   'Général': ['platform_name', 'platform_email', 'currency', 'maintenance_mode'],
-  'Photos & Upload': ['max_upload_size_mb', 'max_photos_per_upload', 'watermark_text'],
+  'Photos & Upload': ['max_upload_size_mb', 'max_photos_per_upload', 'watermark_text', 'photo_editing_enabled'],
   'Reconnaissance faciale': ['face_search_threshold'],
   'Tarifs clients': ['photo_price_1', 'photo_price_6', 'photo_price_10'],
 };
@@ -106,7 +106,7 @@ const Settings = ({ token }) => {
                   const value = getValue(key);
                   const isModified = modified[key] !== undefined;
 
-                  if (setting.key === 'maintenance_mode') {
+                  if (setting.key === 'maintenance_mode' || setting.key === 'photo_editing_enabled') {
                     return (
                       <div key={key} className={`setting-row ${isModified ? 'modified' : ''}`}>
                         <div className="setting-info">

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import AdminSidebar from './components/AdminSidebar';
 import Dashboard from './pages/Dashboard';
 import Photographers from './pages/Photographers';
@@ -9,6 +9,14 @@ import './AdminLayout.css';
 
 const AdminLayout = ({ user, token, onNavigate, onLogout, initialPage }) => {
   const [currentPage, setCurrentPage] = useState(initialPage || 'dashboard');
+
+  // sync page to URL on page change
+  useEffect(() => {
+    const url = currentPage && currentPage !== "dashboard" ? "/admin/" + currentPage : "/admin";
+    if (window.location.pathname !== url) {
+      window.history.replaceState({ screen: "admin", props: { page: currentPage } }, "", url);
+    }
+  }, [currentPage]);
   const [toasts, setToasts] = useState([]);
 
   const showToast = useCallback((message, type = 'success') => {

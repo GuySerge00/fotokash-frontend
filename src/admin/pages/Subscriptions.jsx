@@ -103,6 +103,7 @@ const Subscriptions = ({ token, showToast }) => {
       photo_limit: plan.photo_limit,
       event_limit: plan.event_limit,
       mobile_money_enabled: plan.mobile_money_enabled,
+      photo_editing_level: plan.photo_editing_level || 'none',
     });
   };
 
@@ -243,6 +244,19 @@ const Subscriptions = ({ token, showToast }) => {
                       {editForm.mobile_money_enabled ? '✓ Activé' : '✗ Désactivé'}
                     </button>
                   </div>
+                  <div className="edit-field">
+                    <label>Retouche Photo</label>
+                    <select
+                      value={editForm.photo_editing_level}
+                      onChange={e => setEditForm({...editForm, photo_editing_level: e.target.value})}
+                      style={{ width:'100%', background:'#12121a', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, padding:'10px 14px', color:'#f0f0f5', fontSize:14 }}
+                    >
+                      <option value="none">Désactivé</option>
+                      <option value="basic">Recadrage uniquement</option>
+                      <option value="standard">Recadrage + Amélioration</option>
+                      <option value="full">Recadrage + Amélioration + Filtres</option>
+                    </select>
+                  </div>
                   {validationError && (
                     <div style={{ background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:8,padding:'10px 14px',fontSize:12,color:'#EF4444' }}>
                       {validationError}
@@ -281,6 +295,12 @@ const Subscriptions = ({ token, showToast }) => {
                       <span>Mobile Money</span>
                       <span className="plan-detail-value" style={{ color: plan.mobile_money_enabled ? '#4ADE80' : '#ef4444' }}>
                         {plan.mobile_money_enabled ? '✓ Oui' : '✗ Non'}
+                      </span>
+                    </div>
+                    <div className="plan-detail-row">
+                      <span>Retouche Photo</span>
+                      <span className="plan-detail-value" style={{ color: plan.photo_editing_level === 'none' ? '#ef4444' : plan.photo_editing_level === 'full' ? '#4ADE80' : '#FFB826' }}>
+                        {plan.photo_editing_level === 'none' ? '✗ Désactivé' : plan.photo_editing_level === 'basic' ? 'Recadrage' : plan.photo_editing_level === 'standard' ? 'Recadrage + Amélioration' : 'Complet'}
                       </span>
                     </div>
                   </div>

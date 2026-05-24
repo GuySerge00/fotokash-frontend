@@ -44,8 +44,15 @@ export default function FotoKashApp() {
         .then(function(d) {
           var u = d.user || d.photographer || d;
           setUser(u);
+          const currentPath = window.location.pathname;
+          const fromUrl = urlToScreenProps(currentPath);
           const dest = u.role === "admin" ? "admin" : "dashboard";
-          const destProps = dest === "admin" ? { page: "dashboard" } : { tab: "stats" };
+          let destProps;
+          if (fromUrl.screen === dest) {
+            destProps = fromUrl.props;
+          } else {
+            destProps = dest === "admin" ? { page: "dashboard" } : { tab: "stats" };
+          }
           setScreen(dest);
           setScreenProps(destProps);
           const url = screenToUrl(dest, destProps);

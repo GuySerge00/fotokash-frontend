@@ -3,6 +3,7 @@ import { T, API } from "../../utils/tokens";
 import { Icon } from "../../utils/icons";
 import { Btn } from "../../components/Btn";
 import { formatSize } from "../../utils/helpers";
+import { PhotoEditorModal, BatchToolbar, FILTERS } from "../../components/PhotoEditor";
 
 
 export default function PhotosTab({ token, events, setEvents }) {
@@ -18,6 +19,21 @@ export default function PhotosTab({ token, events, setEvents }) {
   const [limitWarning, setLimitWarning] = useState(false);
   const [uploadSummary, setUploadSummary] = useState(null); // { count, eventName }
   const fileInputRef = useRef(null);
+
+  // Retouche photo
+  const [editingTools, setEditingTools] = useState(null);
+  const [editingFile, setEditingFile] = useState(null);
+  const [editedFiles, setEditedFiles] = useState({});
+
+  useEffect(() => {
+    const fetchEditConfig = async () => {
+      try {
+        const res = await fetch(API + "/photos/editing-config", { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) { const data = await res.json(); if (data.enabled) setEditingTools(data.tools); }
+      } catch (err) { console.log("Editing config unavailable"); }
+    };
+    fetchEditConfig();
+  }, [token]);
 
   // Pré-sélection auto si 1 seul event ou 1 seul live
   useEffect(() => {
@@ -139,7 +155,7 @@ export default function PhotosTab({ token, events, setEvents }) {
       const formData = new FormData();
       formData.append("event_id", eventId);
       // Compression côté client avant envoi
-      const compressedFiles = await Promise.all(batch.map((f) => compressImage(f.file)));
+      const compressedFiles = await Promise.all(batch.map((f) => compressImage(editedFiles[f.id] || f.file)));
       compressedFiles.forEach((f) => formData.append("photos", f));
 
       batch.forEach((f) => {
@@ -191,7 +207,7 @@ export default function PhotosTab({ token, events, setEvents }) {
     setFiles((prev) => prev.map((x) => x.id === fileItem.id ? { ...x, status: "uploading", progress: 30 } : x));
     const formData = new FormData();
     formData.append("event_id", selectedEvent);
-    const compressedRetry = await compressImage(fileItem.file);
+    const compressedRetry = await compressImage(editedFiles[fileItem.id] || fileItem.file);
     formData.append("photos", compressedRetry);
     try {
       const res = await fetch(API + "/photos/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: formData });
@@ -313,6 +329,42 @@ export default function PhotosTab({ token, events, setEvents }) {
             </div>
           </div>
 
+          {editingTools && (
+            <BatchToolbar
+              tools={editingTools}
+              files={files}
+              onBatchApply={async ({ filter, enhance }) => {
+                const pending = files.filter(f => f.status === "pending");
+                for (const fi of pending) {
+                  const img = new Image();
+                  const url = editedFiles[fi.id] ? URL.createObjectURL(editedFiles[fi.id]) : fi.preview;
+                  await new Promise(resolve => {
+                    img.onload = () => {
+                      const canvas = document.createElement("canvas");
+                      canvas.width = img.width; canvas.height = img.height;
+                      const ctx = canvas.getContext("2d");
+                      let css = "";
+                      if (enhance) css += "brightness(108%) contrast(112%) saturate(115%) ";
+                      if (filter !== "none") { const p = FILTERS.find(x => x.id === filter); if (p) css += p.css; }
+                      ctx.filter = css || "none";
+                      ctx.drawImage(img, 0, 0);
+                      canvas.toBlob(blob => {
+                        if (blob) {
+                          const ed = new File([blob], fi.file.name.replace(/\.[^.]+$/, "_batch.jpg"), { type: "image/jpeg", lastModified: Date.now() });
+                          setEditedFiles(prev => ({ ...prev, [fi.id]: ed }));
+                          setFiles(prev => prev.map(x => x.id === fi.id ? { ...x, preview: URL.createObjectURL(ed) } : x));
+                        }
+                        resolve();
+                      }, "image/jpeg", 0.92);
+                    };
+                    img.onerror = () => resolve();
+                    img.src = url;
+                  });
+                }
+              }}
+            />
+          )}
+
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", gap: 10, marginBottom: 18 }}>
             {files.map((f) => {
               const ext = f.name.split(".").pop().toUpperCase().slice(0, 4);
@@ -348,6 +400,18 @@ export default function PhotosTab({ token, events, setEvents }) {
                       <span style={{ background: "rgba(0,0,0,0.7)", borderRadius: 6, padding: "3px 7px", color: T.red, fontSize: 10, fontWeight: 600 }}>Erreur</span>
                       <button onClick={() => retryFile(f)} style={{ background: T.accent, border: "none", borderRadius: 5, padding: "4px 10px", color: "#fff", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: T.font }}>Réessayer</button>
                     </div>
+                  )}
+                  {/* Edit btn */}
+                  {f.status === "pending" && editingTools && (
+                    <button onClick={(e) => { e.stopPropagation(); setEditingFile(f); }} title="Retoucher" style={{
+                      position: "absolute", top: 4, left: 40, background: "rgba(232,89,60,0.85)", border: "none", borderRadius: "50%",
+                      width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#fff", cursor: "pointer", fontSize: 10, zIndex: 2,
+                    }}>✎</button>
+                  )}
+                  {editedFiles[f.id] && f.status === "pending" && (
+                    <div style={{ position: "absolute", bottom: 28, right: 4, background: "rgba(74,222,128,0.9)",
+                      borderRadius: 4, padding: "1px 5px", fontSize: 8, fontWeight: 700, color: "#000" }}>Retouché</div>
                   )}
                   {/* Remove btn */}
                   {f.status !== "uploading" && (
@@ -421,6 +485,18 @@ export default function PhotosTab({ token, events, setEvents }) {
             </div>
           </div>
         </>
+      )}
+      {editingFile && editingTools && (
+        <PhotoEditorModal
+          file={editingFile}
+          tools={editingTools}
+          onSave={(editedFile) => {
+            setEditedFiles(prev => ({ ...prev, [editingFile.id]: editedFile }));
+            setFiles(prev => prev.map(f => f.id === editingFile.id ? { ...f, preview: URL.createObjectURL(editedFile) } : f));
+            setEditingFile(null);
+          }}
+          onCancel={() => setEditingFile(null)}
+        />
       )}
     </div>
   );
