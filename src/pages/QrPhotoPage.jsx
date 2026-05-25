@@ -25,9 +25,22 @@ export default function QrPhotoPage({ qrCode, onNavigate }) {
     var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     var photoUrl = photo.original_url || photo.watermarked_url;
     if (isIOS) {
-      // iOS : ouvrir dans un nouvel onglet pour permettre "Ajouter aux photos"
-      window.open(photoUrl, "_blank");
-      alert("Appuyez longuement sur l\u0027image puis \"Ajouter aux photos\" pour l\u0027enregistrer dans votre galerie.");
+      // iOS : telecharger via blob + navigator.share
+      try {
+        var resp = fetch(photoUrl).then(function(r) { return r.blob(); });
+        resp.then(function(blob) {
+          var file = new File([blob], "fotokash-" + (photo.qr_code_id || "photo") + ".jpg", { type: "image/jpeg" });
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: "FotoKash Photo" });
+          } else {
+            var blobUrl = window.URL.createObjectURL(blob);
+            window.open(blobUrl, "_blank");
+            alert("Appuyez longuement sur l'image puis \"Enregistrer l'image\" pour la sauvegarder.");
+          }
+        });
+      } catch (err) {
+        window.open(photoUrl, "_blank");
+      }
     } else {
       // Desktop/Android : download via blob
       fetch(photoUrl)
