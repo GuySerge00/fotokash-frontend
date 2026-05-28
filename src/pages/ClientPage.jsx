@@ -18,6 +18,11 @@ const [selfieLoading, setSelfieLoading] = useState(false);
   const [matchedIds, setMatchedIds] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const [showOwnerModal, setShowOwnerModal] = useState(false);
+  const [ownerPin, setOwnerPin] = useState("");
+  const [ownerMode, setOwnerMode] = useState(false);
+  const [ownerVerifying, setOwnerVerifying] = useState(false);
+  const [ownerPhotos, setOwnerPhotos] = useState([]);
 
   const startSelfie = async () => {
     setShowSelfie(true);
@@ -229,6 +234,84 @@ const handleFreeDownload = async () => {
     setSelectedPhotos([]);
   };
 
+  const verifyOwnerPin = async () => {
+    if (!ownerPin || ownerPin.length !== 6) {
+      alert("Entrez un code à 6 chiffres.");
+      return;
+    }
+    setOwnerVerifying(true);
+    try {
+      const res = await fetch(API + "/events/" + slug + "/verify-owner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: ownerPin }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOwnerMode(true);
+        setOwnerPhotos(data.photos);
+        setShowOwnerModal(false);
+        // En mode owner, toutes les photos sont matchées
+        setMatchedIds(data.photos.map(p => p.id));
+        setMatchedPhotos(data.photos.length);
+      } else {
+        alert(data.error || "Code incorrect.");
+      }
+    } catch (err) {
+      alert("Erreur de connexion.");
+    } finally {
+      setOwnerVerifying(false);
+    }
+  };
+
+  const [ownerDownloading, setOwnerDownloading] = useState(false);
+  const [zipProgress, setZipProgress] = useState(0);
+
+  const handleOwnerDownloadAll = async () => {
+    setOwnerDownloading(true);
+    setZipProgress(0);
+    try {
+      const response = await fetch(API + "/events/" + slug + "/owner-download-zip?pin=" + ownerPin);
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Erreur lors du téléchargement.");
+        setOwnerDownloading(false);
+        return;
+      }
+      const contentLength = response.headers.get("content-length");
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      const reader = response.body.getReader();
+      const chunks = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        received += value.length;
+        if (total > 0) {
+          setZipProgress(Math.round((received / total) * 100));
+        } else {
+          setZipProgress(Math.min(99, Math.round(received / 1024 / 1024)));
+        }
+      }
+      const blob = new Blob(chunks, { type: "application/zip" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "fotokash-" + slug + ".zip";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Erreur téléchargement ZIP:", err);
+      alert("Erreur de connexion.");
+    } finally {
+      setOwnerDownloading(false);
+      setZipProgress(0);
+    }
+  };
+
   const getPrice = () => {
     const n = selectedPhotos.length;
     if (n === 0) return 0;
@@ -360,6 +443,42 @@ const handleFreeDownload = async () => {
           {Icon.Search(14)} Me retrouver par selfie
         </Btn>
       </header>
+      {/* Lien owner discret */}
+      {!ownerMode && (
+        <div style={{ textAlign: "center", padding: "10px 0", background: "linear-gradient(135deg, rgba(232,89,60,0.04), rgba(255,184,38,0.04))", borderBottom: "1px solid " + T.border }}>
+          <button onClick={() => setShowOwnerModal(true)} style={{
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 20, padding: "7px 18px", color: T.textMuted, fontSize: 12,
+            cursor: "pointer", fontFamily: T.font, display: "inline-flex",
+            alignItems: "center", gap: 7, transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(232,89,60,0.1)"; e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accent; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = T.textMuted; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Accès propriétaire
+          </button>
+        </div>
+      )}
+      {ownerMode && (
+        <div style={{ padding: "12px 20px", background: "linear-gradient(135deg, rgba(76,175,80,0.08), rgba(76,175,80,0.04))", borderBottom: "1px solid rgba(76,175,80,0.2)", display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span style={{ color: T.green, fontSize: 13, fontWeight: 600 }}>Mode propriétaire</span>
+            <span style={{ color: T.textMuted, fontSize: 12 }}>— Toutes les photos sont accessibles</span>
+          </div>
+          <button onClick={handleOwnerDownloadAll} disabled={ownerDownloading} style={{
+            background: ownerDownloading ? "rgba(76,175,80,0.3)" : T.green, color: "#000", border: "none",
+            borderRadius: 20, padding: "7px 18px", fontSize: 12, fontWeight: 700,
+            cursor: ownerDownloading ? "wait" : "pointer", fontFamily: T.font,
+            display: "inline-flex", alignItems: "center", gap: 6,
+            opacity: ownerDownloading ? 0.7 : 1, transition: "all 0.2s",
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {ownerDownloading ? (zipProgress > 0 ? "Téléchargement " + zipProgress + (zipProgress < 100 ? "%" : "% — presque fini !") : "Préparation du ZIP...") : "Télécharger tout en ZIP (" + (ownerPhotos.length || photos.length) + ")"}
+          </button>
+        </div>
+      )}
 {showSelfie && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <video ref={videoRef} autoPlay playsInline muted style={{ width: "100%", maxWidth: 400, borderRadius: T.radius, marginBottom: 16 }} />
@@ -404,7 +523,38 @@ const handleFreeDownload = async () => {
           </div>
         </div>
       )}
-{qrModal && (
+{showOwnerModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ background: T.card, borderRadius: T.radius, padding: 28, maxWidth: 380, width: "100%" }}>
+            <h3 style={{ fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Accès Propriétaire</h3>
+            <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 20 }}>
+              Entrez le code PIN à 6 chiffres fourni par votre photographe pour accéder à toutes les photos de l'événement.
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="000000"
+              value={ownerPin}
+              onChange={(e) => setOwnerPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+              style={{
+                width: "100%", padding: "14px 16px", borderRadius: T.radiusSm,
+                border: "1px solid " + T.border, background: T.bg, color: T.text,
+                fontSize: 24, textAlign: "center", letterSpacing: 8,
+                marginBottom: 16, outline: "none", boxSizing: "border-box",
+                fontFamily: "monospace", fontWeight: 700,
+              }}
+            />
+            <div style={{ display: "flex", gap: 12 }}>
+              <Btn onClick={verifyOwnerPin} disabled={ownerVerifying || ownerPin.length !== 6} style={{ flex: 1, justifyContent: "center", padding: "12px 0" }}>
+                {ownerVerifying ? "Vérification..." : "Valider"}
+              </Btn>
+              <Btn variant="ghost" onClick={() => { setShowOwnerModal(false); setOwnerPin(""); }} style={{ padding: "12px 16px" }}>Annuler</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+      {qrModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
           onClick={() => setQrModal(null)}>
           <div style={{ background: T.card, borderRadius: T.radius, padding: 28, maxWidth: 320, width: "100%", textAlign: "center" }}

@@ -17,6 +17,7 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
+  const [copiedPin, setCopiedPin] = useState(null);
 
   const createEvent = async () => {
     if (!form.name.trim()) return;
@@ -186,6 +187,7 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
                     <div style={{ position: "absolute", right: 0, top: 38, background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, zIndex: 200, minWidth: 170, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
                       {[
                         { label: copiedId === e.id ? "✓ Lien copié !" : "📋 Copier le lien", action: () => copyLink(e) },
+                        { label: copiedPin === e.id ? "✓ Code copié !" : "🔑 Code propriétaire" + (e.owner_pin ? " : " + e.owner_pin : ""), action: () => { if (e.owner_pin) { navigator.clipboard.writeText(e.owner_pin).then(() => { setCopiedPin(e.id); setTimeout(() => setCopiedPin(null), 2000); }); } setMenuOpen(null); } },
                         { label: "↗ Voir la page", action: () => { window.open("https://fotokash.com/e/" + e.slug, "_blank"); setMenuOpen(null); } },
                         { label: "✏️ Renommer", action: () => startRename(e) },
                         { label: "🗑 Supprimer", action: () => { setDeleteTarget(e); setMenuOpen(null); }, red: true },
