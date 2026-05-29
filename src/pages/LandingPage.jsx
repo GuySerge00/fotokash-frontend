@@ -246,6 +246,8 @@ export default function LandingPage({ onNavigate, platform }) {
         <div style={{ display: "flex", gap: 16 }}>
           <span onClick={() => onNavigate("legal", { tab: "cgu" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>CGU / CGV</span>
           <span onClick={() => onNavigate("legal", { tab: "confidentialite" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Politique de confidentialité</span>
+          <span onClick={() => onNavigate("faq")} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>FAQ</span>
+          <span onClick={() => onNavigate("howto")} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Comment ca marche</span>
         </div>
       </footer>
     </div>

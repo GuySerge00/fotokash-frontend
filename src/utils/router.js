@@ -10,6 +10,8 @@ export const TITLES = {
   "dashboard/earnings": "Revenus - FotoKash",
   "dashboard/account": "Mon compte - FotoKash",
   legal: "Mentions légales - FotoKash",
+  faq: "FAQ — Questions fréquentes · FotoKash",
+  howto: "Comment ça marche — FotoKash",
   admin: "Admin - FotoKash",
   "admin/dashboard": "Dashboard Admin - FotoKash",
   "admin/photographers": "Photographes - FotoKash Admin",
@@ -28,6 +30,8 @@ export function screenToUrl(s, props = {}) {
   if (s === "client" || s === "client-demo") return "/e/" + (props.slug || "");
   if (s === "live") return "/live/" + (props.slug || "");
   if (s === "legal") return "/legal";
+  if (s === "faq") return "/faq";
+  if (s === "howto") return "/comment-ca-marche";
   if (s === "admin") {
     const p = props.page;
     return p && p !== "dashboard" ? "/admin/" + p : "/admin";
@@ -48,6 +52,8 @@ export function urlToScreenProps(path) {
   if (path.startsWith("/live/")) return { screen: "live", props: { slug: path.replace("/live/", "") } };
   if (path.startsWith("/p/")) return { screen: "qr-photo", props: { qrCode: path.replace("/p/", "") } };
   if (path === "/legal") return { screen: "legal", props: {} };
+  if (path === "/faq") return { screen: "faq", props: {} };
+  if (path === "/comment-ca-marche") return { screen: "howto", props: {} };
   if (path === "/admin" || path.startsWith("/admin/")) {
     const page = path.replace("/admin", "").replace("/", "") || "dashboard";
     return { screen: "admin", props: { page } };

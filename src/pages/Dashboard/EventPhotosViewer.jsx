@@ -17,6 +17,21 @@ export default function EventPhotosViewer({ eventId, eventName, token, onClose }
       .catch(function() { setLoading(false); });
   }, [eventId]);
 
+  var coverState = useState(null);
+  var coverUrl = coverState[0];
+  var setCoverUrl = coverState[1];
+
+  var setCover = function(photo) {
+    if (!window.confirm("Definir cette photo comme couverture de l'evenement ?")) return;
+    fetch(API + "/events/" + eventId + "/cover", {
+      method: "PATCH",
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ photo_url: photo.thumbnail_url || photo.watermarked_url }),
+    }).then(function(r) {
+      if (r.ok) { setCoverUrl(photo.thumbnail_url || photo.watermarked_url); alert("Couverture mise a jour !"); }
+    });
+  };
+
   var deletePhoto = function(photoId) {
     if (!window.confirm("Supprimer cette photo ?")) return;
     fetch(API + "/photos/" + photoId, {
@@ -47,6 +62,10 @@ export default function EventPhotosViewer({ eventId, eventName, token, onClose }
               <div key={p.id} style={{ position: "relative", borderRadius: T.radiusSm, overflow: "hidden", aspectRatio: "1", border: "1px solid " + T.border }}>
                 <img src={p.thumbnail_url || p.watermarked_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 <button onClick={function() { deletePhoto(p.id); }} style={{ position: "absolute", top: 4, right: 4, background: "rgba(239,68,68,0.85)", border: "none", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", fontSize: 12 }}>X</button>
+                <button onClick={function() { setCover(p); }} title="Definir comme couverture" style={{ position: "absolute", bottom: 4, right: 4, background: (coverUrl === (p.thumbnail_url || p.watermarked_url)) ? "rgba(34,197,94,0.90)" : "rgba(0,0,0,0.01)", border: "none", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", color: (coverUrl === (p.thumbnail_url || p.watermarked_url)) ? "#fff" : "rgba(255,255,255,0.25)", cursor: "pointer", fontSize: 14 }}>★</button>
+                {(coverUrl === (p.thumbnail_url || p.watermarked_url)) && (
+                  <div style={{ position: "absolute", bottom: 4, left: 4, background: "rgba(232,89,60,0.90)", borderRadius: 4, padding: "2px 6px", fontSize: 10, color: "#fff", fontWeight: 600 }}>Cover</div>
+                )}
               </div>
             );
           })}

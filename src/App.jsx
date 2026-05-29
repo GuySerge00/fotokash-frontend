@@ -10,6 +10,8 @@ import QrPhotoPage from "./pages/QrPhotoPage";
 import AdminLayout from "./admin/AdminLayout";
 import LiveEventPage from "./LiveEventPage";
 import LegalPage from "./LegalPage";
+import FaqPage from "./pages/FaqPage";
+import HowItWorksPage from "./pages/HowItWorksPage";
 
 export default function FotoKashApp() {
   const seoConfig = (() => {
@@ -19,6 +21,7 @@ export default function FotoKashApp() {
     if (p.startsWith('/live/')) return { title: 'Evenement en direct', noindex: true };
     if (p.startsWith('/e/')) return { title: 'Galerie Photos' };
     if (p === '/login') return { title: 'Connexion Photographe' };
+    if (p === '/faq') return { title: 'FAQ — Questions frequentes' };
     if (p === '/register') return { title: 'Inscription Photographe' };
     return {};
   })();
@@ -109,6 +112,8 @@ export default function FotoKashApp() {
       {screen === "dashboard" && <Dashboard user={user} token={token} onNavigate={navigate} onLogout={handleLogout} initialTab={screenProps.tab} />}
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "legal" && <LegalPage tab={screenProps.tab} onNavigate={navigate} />}
+      {screen === "faq" && <FaqPage navigate={navigate} />}
+      {screen === "howto" && <HowItWorksPage navigate={navigate} />}
       {screen === "live" && <LiveEventPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} initialPage={screenProps.page} />}
       {screen === "qr-photo" && <QrPhotoPage qrCode={screenProps.qrCode} onNavigate={navigate} />}
