@@ -5,7 +5,8 @@ import { Btn } from "../../components/Btn";
 import { fcfa } from "../../utils/helpers";
 
 export default function LiveTab({ token, events, onNavigate, setEvents }) {
-  const [liveEvent, setLiveEvent] = useState(null);
+  const [liveEvents, setLiveEvents] = useState([]);
+  const [selectedLiveId, setSelectedLiveId] = useState(null);
   const [dashData, setDashData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -20,10 +21,19 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
   const pollRef = useRef(null);
 
   useEffect(() => {
-    const live = events.find(e => e.is_live);
-    setLiveEvent(live || null);
+    const lives = events.filter(e => e.is_live);
+    setLiveEvents(lives);
+    setSelectedLiveId(prev => (prev && lives.some(e => e.id === prev)) ? prev : (lives[0] ? lives[0].id : null));
     setLoading(false);
   }, [events]);
+
+  useEffect(() => {
+    setActivityHistory([0,0,0,0,0,0,0]);
+    setPrevVisitorCount(0);
+    setDashData(null);
+  }, [selectedLiveId]);
+
+  const liveEvent = liveEvents.find(e => e.id === selectedLiveId) || null;
 
   useEffect(() => {
     if (!liveEvent) return;
@@ -52,8 +62,6 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
       .then(d => {
         if (d.event) {
           setEvents(prev => prev.map(x => x.id === liveEvent.id ? { ...x, is_live: false } : x));
-          setLiveEvent(null);
-          setDashData(null);
         }
       });
     setShowStopConfirm(false);
@@ -123,6 +131,28 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
 
   return (
     <div>
+      {liveEvents.length > 1 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          {liveEvents.map(le => (
+            <button
+              key={le.id}
+              onClick={() => setSelectedLiveId(le.id)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 6,
+                background: le.id === selectedLiveId ? T.accent : "rgba(255,255,255,0.04)",
+                color: le.id === selectedLiveId ? "#fff" : T.textMuted,
+                border: "1px solid " + (le.id === selectedLiveId ? T.accent : T.border),
+                borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: T.font,
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: le.id === selectedLiveId ? "#fff" : T.green, display: "inline-block" }} />
+              {le.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {showStopConfirm && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: T.card, borderRadius: T.radius, padding: "28px 28px 24px", maxWidth: 360, width: "100%", textAlign: "center" }}>
