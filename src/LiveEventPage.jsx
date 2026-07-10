@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import PaymentStatusModal from "./components/PaymentStatusModal";
 
 const API = import.meta.env.VITE_API_URL || "/api";
 
@@ -68,12 +69,38 @@ export default function LiveEventPage({ slug, onNavigate }) {
   // Nouvelles features
   const [lightboxPhoto, setLightboxPhoto] = useState(null); // photo en plein écran
   const [paymentSuccess, setPaymentSuccess] = useState(false); // écran succès
+  const [unlockedPhotos, setUnlockedPhotos] = useState({ transactionId: null, photoIds: [] });
+  const [downloadingAll, setDownloadingAll] = useState(false);
   const [showPricingInfo, setShowPricingInfo] = useState(false); // tarifs dégressifs
   const notifTimerRef = useRef(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const pollRef = useRef(null);
+  const paymentPopupRef = useRef(null);
+  const [paymentTx, setPaymentTx] = useState(null);
   const matchesRef = useRef([]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const txParam = urlParams.get("tx");
+    const paymentResult = urlParams.get("payment");
+    if (txParam) {
+      fetch(API + "/payments/" + txParam + "/status")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.transaction) {
+            setPaymentTx({ transactionId: d.transaction.id, amount: d.transaction.amount });
+          }
+        })
+        .catch(() => {});
+      window.history.replaceState({}, "", window.location.pathname);
+      if (window.opener && paymentResult === "success") {
+        setTimeout(function() {
+          window.close();
+        }, 3000);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetch(API + "/live/" + slug)
@@ -241,21 +268,91 @@ export default function LiveEventPage({ slug, onNavigate }) {
 
   const submitPayment = async () => {
     if (!phoneNumber || phoneNumber.length < 8) { alert("Numero invalide."); return; }
+    // Ouverture de la popup AVANT le await, sinon les navigateurs la bloquent
+    const popup = window.open('', 'fotokash_payment', 'width=480,height=720');
+    paymentPopupRef.current = popup;
+
     setPaymentLoading(true);
     try {
       const res = await fetch(API + "/payments/initiate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ event_id: event.id, photo_ids: selectedPhotos, amount: getPrice(), phone: phoneNumber, provider: paymentProvider }),
+        body: JSON.stringify({ event_id: event.id, photo_ids: selectedPhotos, amount: getPrice(), phone_number: phoneNumber, payment_method: paymentProvider, context: "live" }),
       });
       const data = await res.json();
       if (res.ok) {
+        if (data.payment_url) {
+          if (popup && !popup.closed) {
+            popup.location.href = data.payment_url;
+          } else {
+            window.open(data.payment_url, '_blank');
+          }
+        } else if (popup && !popup.closed) {
+          popup.close();
+        }
         setShowPaymentModal(false);
-        setPaymentSuccess(true); // écran succès
-        setSelectedPhotos([]);
-      } else { alert(data.error || "Erreur paiement."); }
-    } catch (err) { alert("Erreur de connexion."); }
+        setPaymentTx({ transactionId: data.transaction_id, amount: data.amount });
+      } else {
+        if (popup && !popup.closed) popup.close();
+        alert(data.error || "Erreur paiement.");
+      }
+    } catch (err) {
+      if (paymentPopupRef.current && !paymentPopupRef.current.closed) paymentPopupRef.current.close();
+      alert("Erreur de connexion.");
+    }
     finally { setPaymentLoading(false); }
+  };
+
+  const closePaymentPopup = () => {
+    if (paymentPopupRef.current && !paymentPopupRef.current.closed) {
+      paymentPopupRef.current.close();
+    }
+  };
+
+  const handlePaymentSuccess = (tx) => {
+    closePaymentPopup();
+    setPaymentTx(null);
+    setSelectedPhotos([]);
+    if (tx && tx.photos_purchased) {
+      setUnlockedPhotos({ transactionId: tx.id, photoIds: tx.photos_purchased });
+    }
+    setPaymentSuccess(true); // ecran succes plein ecran existant
+  };
+
+  const handleDownloadAllPurchased = async () => {
+    if (!unlockedPhotos.transactionId || unlockedPhotos.photoIds.length === 0) return;
+    setDownloadingAll(true);
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    try {
+      for (const photoId of unlockedPhotos.photoIds) {
+        try {
+          const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + unlockedPhotos.transactionId);
+          const data = await res.json();
+          if (!res.ok || !data.download_url) continue;
+          const blob = await fetch(data.download_url).then((r) => r.blob());
+          if (isIOS && navigator.share) {
+            const file = new File([blob], "fotokash-" + photoId + ".jpg", { type: blob.type });
+            await navigator.share({ files: [file] });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "fotokash-" + photoId + ".jpg";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }
+        } catch (err) { console.error("Erreur telechargement photo " + photoId + ":", err); }
+      }
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
+  const handlePaymentClose = () => {
+    closePaymentPopup();
+    setPaymentTx(null);
   };
 
   const shareLink = () => {
@@ -298,8 +395,11 @@ export default function LiveEventPage({ slug, onNavigate }) {
           <p style={{ fontSize: 12, color: T.textMuted, marginBottom: 4 }}>Evenement</p>
           <p style={{ fontSize: 14, fontWeight: 600 }}>{event.name}</p>
         </div>
-        <button onClick={() => setPaymentSuccess(false)} style={{ background: T.accent, color: "#fff", border: "none", padding: "14px 32px", borderRadius: T.radiusSm, fontSize: 15, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: T.font }}>
-          Retour a mes photos
+        <button onClick={handleDownloadAllPurchased} disabled={downloadingAll} style={{ background: T.accent, color: "#fff", border: "none", padding: "14px 32px", borderRadius: T.radiusSm, fontSize: 15, fontWeight: 600, cursor: downloadingAll ? "default" : "pointer", width: "100%", fontFamily: T.font, opacity: downloadingAll ? 0.7 : 1, marginBottom: 12 }}>
+          {downloadingAll ? "Telechargement..." : "Telecharger mes photos"}
+        </button>
+        <button onClick={() => setPaymentSuccess(false)} style={{ background: "transparent", color: T.textMuted, border: "1px solid " + T.border, padding: "14px 32px", borderRadius: T.radiusSm, fontSize: 15, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: T.font }}>
+          Retour a l'evenement
         </button>
       </div>
     </div>
@@ -553,7 +653,18 @@ export default function LiveEventPage({ slug, onNavigate }) {
                       transition: "border-color 0.2s",
                     }}
                   >
-                    <img src={m.watermarked_url || m.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    {/* Div avec background-image au lieu de <img> : voir ClientPage.jsx
+                        pour le detail (bloque le menu natif "Telecharger l'image"). */}
+                    <div
+                      aria-hidden="true"
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{
+                        width: "100%", height: "100%",
+                        backgroundImage: `url(${m.watermarked_url || m.thumbnail_url})`,
+                        backgroundSize: "cover", backgroundPosition: "center",
+                        WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none",
+                      }}
+                    />
                     {isNew && (
                       <div style={{ position: "absolute", top: 4, left: 4, background: T.green, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>NOUVEAU</div>
                     )}
@@ -647,6 +758,15 @@ export default function LiveEventPage({ slug, onNavigate }) {
             </div>
           </div>
         </div>
+      )}
+      {paymentTx && (
+        <PaymentStatusModal
+          transactionId={paymentTx.transactionId}
+          amount={paymentTx.amount}
+          onSuccess={handlePaymentSuccess}
+          onError={() => {}}
+          onCancel={handlePaymentClose}
+        />
       )}
     </div>
   );

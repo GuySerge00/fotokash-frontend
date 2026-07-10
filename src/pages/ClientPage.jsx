@@ -3,6 +3,7 @@ import { T, API } from "../utils/tokens";
 import { Icon } from "../utils/icons";
 import { Btn } from "../components/Btn";
 import { fcfa } from "../utils/helpers";
+import PaymentStatusModal from "../components/PaymentStatusModal";
 
 
 export default function ClientPage({ slug, onNavigate }) {
@@ -18,6 +19,9 @@ const [selfieLoading, setSelfieLoading] = useState(false);
   const [matchedIds, setMatchedIds] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const paymentPopupRef = useRef(null);
+  const [paymentTx, setPaymentTx] = useState(null);
+  const [unlockedPhotos, setUnlockedPhotos] = useState({ transactionId: null, photoIds: [] });
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [ownerPin, setOwnerPin] = useState("");
   const [ownerMode, setOwnerMode] = useState(false);
@@ -72,6 +76,32 @@ const [selfieLoading, setSelfieLoading] = useState(false);
     }, "image/jpeg", 0.85);
   };
 
+useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const txParam = urlParams.get("tx");
+    const paymentResult = urlParams.get("payment");
+    if (txParam) {
+      fetch(API + "/payments/" + txParam + "/status")
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.transaction) {
+            setPaymentTx({ transactionId: d.transaction.id, amount: d.transaction.amount });
+          }
+        })
+        .catch(() => {});
+      window.history.replaceState({}, "", window.location.pathname);
+      // Si cette page s'affiche dans la popup de paiement (window.opener existe)
+      // et que le paiement est un succes, on referme automatiquement la popup
+      // apres un court delai pour laisser le temps d'afficher la confirmation.
+      // Le client revient alors naturellement sur l'onglet principal, ou les
+      // photos seront deja debloquees grace au polling qui y tourne aussi.
+      if (window.opener && paymentResult === "success") {
+        setTimeout(function() {
+          window.close();
+        }, 3000);
+      }
+    }
+  }, []);
 useEffect(() => {
     setLoading(true);
     setNotFound(false);
@@ -141,6 +171,10 @@ const [paymentLoading, setPaymentLoading] = useState(false);
       alert("Entrez un numéro de téléphone valide.");
       return;
     }
+    // Ouverture de la popup AVANT le await, sinon les navigateurs la bloquent
+    const popup = window.open('', 'fotokash_payment', 'width=480,height=720');
+    paymentPopupRef.current = popup;
+
     setPaymentLoading(true);
     try {
       var res = await fetch(API + "/payments/initiate", {
@@ -150,23 +184,86 @@ const [paymentLoading, setPaymentLoading] = useState(false);
           event_id: event.id,
           photo_ids: selectedPhotos,
           amount: getPrice(),
-          phone: phoneNumber,
-          provider: paymentProvider,
+          phone_number: phoneNumber,
+          payment_method: paymentProvider,
         }),
       });
       var data = await res.json();
       if (res.ok) {
-        alert("Paiement initié ! Validez sur votre téléphone. Référence : " + (data.transaction_id || data.reference || "OK"));
+        if (data.payment_url) {
+          if (popup && !popup.closed) {
+            popup.location.href = data.payment_url;
+          } else {
+            window.open(data.payment_url, '_blank');
+          }
+        } else if (popup && !popup.closed) {
+          popup.close();
+        }
         setShowPaymentModal(false);
-        setSelectedPhotos([]);
+        setPaymentTx({ transactionId: data.transaction_id, amount: data.amount });
       } else {
+        if (popup && !popup.closed) popup.close();
         alert(data.error || "Erreur lors du paiement.");
       }
     } catch (err) {
+      if (paymentPopupRef.current && !paymentPopupRef.current.closed) paymentPopupRef.current.close();
       alert("Erreur de connexion.");
     } finally {
       setPaymentLoading(false);
     }
+  };
+
+  const closePaymentPopup = () => {
+    if (paymentPopupRef.current && !paymentPopupRef.current.closed) {
+      paymentPopupRef.current.close();
+    }
+  };
+
+  const handlePaymentSuccess = (tx) => {
+    if (event && event.id) {
+      fetch(API + "/photos/event/" + event.id + "/public")
+        .then((r) => r.json())
+        .then((d) => setPhotos(d.photos || []))
+        .catch(() => {});
+    }
+    if (tx && tx.photos_purchased) {
+      setUnlockedPhotos({ transactionId: tx.id, photoIds: tx.photos_purchased });
+    }
+    setSelectedPhotos([]);
+  };
+
+  const handleDownloadPhoto = async (photoId) => {
+    if (!unlockedPhotos.transactionId) return;
+    try {
+      const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + unlockedPhotos.transactionId);
+      const data = await res.json();
+      if (!res.ok || !data.download_url) {
+        alert(data.error || "Telechargement impossible.");
+        return;
+      }
+      const blob = await fetch(data.download_url).then((r) => r.blob());
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      if (isIOS && navigator.share) {
+        const file = new File([blob], "fotokash-" + photoId + ".jpg", { type: blob.type });
+        await navigator.share({ files: [file] });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "fotokash-" + photoId + ".jpg";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      alert("Erreur de telechargement.");
+    }
+  };
+
+  const handlePaymentClose = () => {
+    closePaymentPopup();
+    setPaymentTx(null);
   };
 const handleFreeDownload = async () => {
     // Detecter iOS (Safari ne supporte pas a.download)
@@ -523,6 +620,15 @@ const handleFreeDownload = async () => {
           </div>
         </div>
       )}
+{paymentTx && (
+        <PaymentStatusModal
+          transactionId={paymentTx.transactionId}
+          amount={paymentTx.amount}
+          onSuccess={handlePaymentSuccess}
+          onError={() => {}}
+          onCancel={handlePaymentClose}
+        />
+      )}
 {showOwnerModal && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
           <div style={{ background: T.card, borderRadius: T.radius, padding: 28, maxWidth: 380, width: "100%" }}>
@@ -645,7 +751,23 @@ const handleFreeDownload = async () => {
                       border: `2px solid ${selectedPhotos.includes(p.id) ? T.accent : "transparent"}`,
                       transition: "border-color 0.2s",
                     }}>
-                      <img src={p.watermarked_url || p.thumbnail_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      {/* Div avec background-image au lieu de <img> : bloque le menu
+                          natif "Telecharger l'image" d'Android Chrome au long-press,
+                          qui ne cible que les vraies balises <img>. Combine avec
+                          onContextMenu (clic droit desktop) et touch-callout none
+                          (menu long-press iOS Safari). Protection defense-en-profondeur,
+                          pas infaillible (devtools/inspection reseau restent possibles),
+                          mais l'image affichee ici est deja watermarkee/basse resolution. */}
+                      <div
+                        aria-hidden="true"
+                        onContextMenu={(e) => e.preventDefault()}
+                        style={{
+                          width: "100%", height: "100%",
+                          backgroundImage: `url(${p.watermarked_url || p.thumbnail_url})`,
+                          backgroundSize: "cover", backgroundPosition: "center",
+                          WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none",
+                        }}
+                      />
                       {selectedPhotos.includes(p.id) && (
                         <div style={{
                           position: "absolute", top: 6, right: 6, width: 24, height: 24,
@@ -663,6 +785,17 @@ const handleFreeDownload = async () => {
                           display: "flex", alignItems: "center", justifyContent: "center",
                           color: "#fff", cursor: "pointer", fontSize: 12,
                         }}>{Icon.QrCode(14)}</div>
+                      )}
+                      {unlockedPhotos.photoIds.includes(p.id) && (
+                        <div onClick={(ev) => {
+                          ev.stopPropagation();
+                          handleDownloadPhoto(p.id);
+                        }} style={{
+                          position: "absolute", bottom: 6, left: 6, padding: "4px 10px",
+                          borderRadius: 7, background: T.accent,
+                          display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
+                          color: "#fff", cursor: "pointer", fontSize: 11, fontWeight: 600,
+                        }}>Telecharger</div>
                       )}
                     </div>
                   ))}
