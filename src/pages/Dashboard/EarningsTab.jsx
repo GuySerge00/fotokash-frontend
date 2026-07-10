@@ -364,16 +364,21 @@ export default function EarningsTab({ token }) {
             <div style={{ padding: 32, textAlign: "center", color: T.textMuted, fontSize: 13 }}>Aucune transaction</div>
           ) : (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 11, color: T.textMuted, fontWeight: 600 }}>
-                <span>Date</span><span>{"Événement"}</span><span>Photos</span><span>Montant</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 11, color: T.textMuted, fontWeight: 600 }}>
+                <span>Date</span><span>{"Événement"}</span><span>Photos</span><span>Moyen</span><span>Montant</span><span>Statut</span>
               </div>
               {history.transactions.map((tx, i) => (
                 <div key={i}>
-                  <div onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 12, alignItems: "center", cursor: "pointer" }}>
-                    <span style={{ color: T.textMuted }}>{fdate(tx.created_at)}</span>
+                  <div onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 12, alignItems: "center", cursor: "pointer" }}>
+                    <div>
+                      <div style={{ color: T.textMuted }}>{fdate(tx.created_at)}</div>
+                      <div style={{ fontSize: 10, color: T.textMuted, opacity: 0.6, fontFamily: "monospace" }} title={tx.reference}>{(tx.reference || "").slice(0, 8)}...</div>
+                    </div>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.event_name || "—"}</span>
                     <span style={{ color: T.textMuted }}>{tx.photos_count || "—"}</span>
+                    <span style={{ color: T.textMuted, textTransform: "capitalize" }}>{tx.payment_method || "—"}</span>
                     <span style={{ color: tx.status === "completed" ? T.green : T.gold, fontWeight: 600 }}>{fcfa(tx.amount)}</span>
+                    <span style={{ color: tx.status === "completed" ? T.green : tx.status === "failed" ? "#EF4444" : T.gold, fontWeight: 600, fontSize: 11 }}>{tx.status === "completed" ? "Complétée" : tx.status === "failed" ? "Échouée" : "En attente"}</span>
                   </div>
                   {expandedTx === tx.id && (
                     <div style={{ padding: "10px 18px", borderBottom: "1px solid " + T.border, background: "rgba(255,255,255,0.02)", fontSize: 11, color: T.textMuted }}>

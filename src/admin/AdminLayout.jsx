@@ -6,6 +6,7 @@ import Subscriptions from './pages/Subscriptions';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import Withdrawals from './pages/Withdrawals';
+import Transactions from './pages/Transactions';
 import './AdminLayout.css';
 
 const AdminLayout = ({ user, token, onNavigate, onLogout, initialPage }) => {
@@ -42,6 +43,7 @@ const AdminLayout = ({ user, token, onNavigate, onLogout, initialPage }) => {
       case 'subscriptions':  return <Subscriptions {...props} />;
       case 'commissions':    return <Subscriptions {...props} />;
       case 'withdrawals':    return <Withdrawals {...props} />;
+      case 'transactions':   return <Transactions {...props} />;
       case 'logs':           return <Logs {...props} />;
       case 'settings':       return <Settings {...props} />;
       default:               return <Dashboard {...props} />;
