@@ -26,15 +26,21 @@ const Withdrawals = ({ token, showToast }) => {
 
   useEffect(() => { fetchWithdrawals(); }, [filter]);
 
-  const handleAction = async (id, status) => {
+  const handleAction = async (id, action) => {
     setProcessing(id);
     try {
+      const realStatus = action === 'rejected' ? 'rejected' : 'approved';
+      const body = { status: realStatus, admin_note: adminNote };
+      if (action === 'manual') body.manual = true;
       const res = await fetch(API_URL + '/admin/withdrawals/' + id, {
         method: 'PUT', headers,
-        body: JSON.stringify({ status, admin_note: adminNote })
+        body: JSON.stringify(body)
       });
       if (res.ok) {
-        if (showToast) showToast('Retrait ' + (status === 'approved' ? 'approuvé' : 'rejeté'));
+        const msg = action === 'approved' ? 'Retrait approuvé (transfert automatique envoyé)'
+          : action === 'manual' ? 'Retrait marqué comme traité manuellement'
+          : 'Retrait rejeté';
+        if (showToast) showToast(msg);
         setNoteModal(null);
         setAdminNote('');
         fetchWithdrawals();
@@ -57,15 +63,18 @@ const Withdrawals = ({ token, showToast }) => {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 28, width: 400, maxWidth: '90vw' }}>
             <h3 style={{ margin: '0 0 8px', color: '#F0F0F5', fontSize: 16, fontWeight: 700 }}>
-              {noteModal.action === 'approved' ? 'Approuver le retrait' : 'Rejeter le retrait'}
+              {noteModal.action === 'approved' ? 'Approuver le retrait (transfert automatique)' : noteModal.action === 'manual' ? 'Marquer comme traite manuellement' : 'Rejeter le retrait'}
             </h3>
+            {noteModal.action === 'manual' && (
+              <p style={{ margin: '0 0 6px', color: '#818CF8', fontSize: 12 }}>{"Aucun transfert ne sera declenche - a utiliser seulement si vous avez deja paye ce retrait autrement (ex: appli Jeko directement)."}</p>
+            )}
             <p style={{ margin: '0 0 6px', color: '#8888A0', fontSize: 13 }}>
               {noteModal.studio_name} — {fcfa(noteModal.amount)} F CFA — {noteModal.phone}
             </p>
             <textarea
               value={adminNote}
               onChange={e => setAdminNote(e.target.value)}
-              placeholder={noteModal.action === 'rejected' ? 'Motif du rejet (obligatoire)...' : 'Note (optionnel)...'}
+              placeholder={noteModal.action === 'rejected' ? 'Motif du rejet (obligatoire)...' : noteModal.action === 'manual' ? 'Reference du paiement manuel (optionnel)...' : 'Note (optionnel)...'}
               style={{ width: '100%', background: '#12121a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 14px', color: '#f0f0f5', fontSize: 13, minHeight: 80, resize: 'vertical', marginTop: 12, fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
@@ -73,8 +82,8 @@ const Withdrawals = ({ token, showToast }) => {
               <button
                 onClick={() => handleAction(noteModal.id, noteModal.action)}
                 disabled={noteModal.action === 'rejected' && !adminNote.trim()}
-                style={{ flex: 1, background: noteModal.action === 'approved' ? '#4ADE80' : '#EF4444', color: noteModal.action === 'approved' ? '#000' : '#fff', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: (noteModal.action === 'rejected' && !adminNote.trim()) ? 0.4 : 1 }}
-              >{noteModal.action === 'approved' ? 'Approuver' : 'Rejeter'}</button>
+                style={{ flex: 1, background: noteModal.action === 'approved' ? '#4ADE80' : noteModal.action === 'manual' ? '#818CF8' : '#EF4444', color: noteModal.action === 'rejected' ? '#fff' : '#000', border: 'none', borderRadius: 8, padding: '11px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer', opacity: (noteModal.action === 'rejected' && !adminNote.trim()) ? 0.4 : 1 }}
+              >{noteModal.action === 'approved' ? 'Approuver' : noteModal.action === 'manual' ? 'Confirmer' : 'Rejeter'}</button>
             </div>
           </div>
         </div>
@@ -131,8 +140,9 @@ const Withdrawals = ({ token, showToast }) => {
               <div style={{ display: 'flex', gap: 6 }}>
                 {w.status === 'pending' && (
                   <>
-                    <button onClick={() => setNoteModal({ ...w, action: 'approved' })} disabled={processing === w.id} style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 6, padding: '5px 12px', color: '#4ADE80', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Approuver</button>
-                    <button onClick={() => setNoteModal({ ...w, action: 'rejected' })} disabled={processing === w.id} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, padding: '5px 12px', color: '#EF4444', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Rejeter</button>
+                    <button onClick={() => setNoteModal({ ...w, action: 'approved' })} disabled={processing === w.id} style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 6, padding: '5px 10px', color: '#4ADE80', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Approuver</button>
+                    <button onClick={() => setNoteModal({ ...w, action: 'manual' })} disabled={processing === w.id} style={{ background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.3)', borderRadius: 6, padding: '5px 10px', color: '#818CF8', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Manuel</button>
+                    <button onClick={() => setNoteModal({ ...w, action: 'rejected' })} disabled={processing === w.id} style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 6, padding: '5px 10px', color: '#EF4444', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Rejeter</button>
                   </>
                 )}
                 {w.status !== 'pending' && w.admin_note && (
