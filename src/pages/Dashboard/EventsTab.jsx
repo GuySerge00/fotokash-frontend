@@ -181,23 +181,26 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
                 </div>
 
                 {/* Menu ⋯ */}
-                <div style={{ position: "relative", flexShrink: 0, marginLeft: 10 }} onClick={(ev) => ev.stopPropagation()}>
+                <div style={{ display: "flex", gap: 8, flexShrink: 0, marginLeft: 10 }} onClick={(ev) => ev.stopPropagation()}>
+                  <button onClick={() => copyLink(e)} title="Copier le lien" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid " + T.border, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: copiedId === e.id ? T.accent : T.textMuted, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>{copiedId === e.id ? Icon.Check(15) : Icon.Link(15)}</button>
+                  <div style={{ position: "relative" }}>
                   <button data-tour="owner-pin-menu" onClick={() => setMenuOpen(menuOpen === e.id ? null : e.id)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid " + T.border, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: T.textMuted, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>⋯</button>
                   {menuOpen === e.id && (
                     <div style={{ position: "absolute", right: 0, top: 38, background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, zIndex: 200, minWidth: 170, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
                       {[
-                        { label: copiedId === e.id ? "✓ Lien copié !" : "📋 Copier le lien", action: () => copyLink(e) },
-                        { label: copiedPin === e.id ? "✓ Code copié !" : "🔑 Code propriétaire" + (e.owner_pin ? " : " + e.owner_pin : ""), action: () => { if (e.owner_pin) { navigator.clipboard.writeText(e.owner_pin).then(() => { setCopiedPin(e.id); setTimeout(() => setCopiedPin(null), 2000); }); } setMenuOpen(null); } },
-                        { label: "↗ Voir la page", action: () => { window.open("https://fotokash.com/e/" + e.slug, "_blank"); setMenuOpen(null); } },
-                        { label: "✏️ Renommer", action: () => startRename(e) },
-                        { label: "🗑 Supprimer", action: () => { setDeleteTarget(e); setMenuOpen(null); }, red: true },
+                        { icon: copiedId === e.id ? Icon.Check(14) : Icon.Link(14), label: copiedId === e.id ? "Lien copié !" : "Copier le lien", action: () => copyLink(e) },
+                        { icon: copiedPin === e.id ? Icon.Check(14) : Icon.Key(14), label: copiedPin === e.id ? "Code copié !" : "Code propriétaire" + (e.owner_pin ? " : " + e.owner_pin : ""), action: () => { if (e.owner_pin) { navigator.clipboard.writeText(e.owner_pin).then(() => { setCopiedPin(e.id); setTimeout(() => setCopiedPin(null), 2000); }); } setMenuOpen(null); } },
+                        { icon: Icon.ExternalLink(14), label: "Voir la page", action: () => { window.open("https://fotokash.com/e/" + e.slug, "_blank"); setMenuOpen(null); } },
+                        { icon: Icon.Edit(14), label: "Renommer", action: () => startRename(e) },
+                        { icon: Icon.Trash(14), label: "Supprimer", action: () => { setDeleteTarget(e); setMenuOpen(null); }, red: true },
                       ].map((item, i) => (
-                        <button key={i} onClick={item.action} style={{ display: "block", width: "100%", padding: "10px 14px", background: "transparent", border: "none", textAlign: "left", fontSize: 13, cursor: "pointer", color: item.red ? T.red : T.text, fontFamily: T.font, borderTop: i > 0 ? "1px solid " + T.border : "none" }}>
-                          {item.label}
+                        <button key={i} onClick={item.action} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "10px 14px", background: "transparent", border: "none", textAlign: "left", fontSize: 13, cursor: "pointer", color: item.red ? T.red : T.text, fontFamily: T.font, borderTop: i > 0 ? "1px solid " + T.border : "none" }}>
+                          {item.icon}{item.label}
                         </button>
                       ))}
                     </div>
                   )}
+                  </div>
                 </div>
               </div>
 
