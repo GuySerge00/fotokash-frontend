@@ -25,6 +25,8 @@ export default function EarningsTab({ token }) {
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [withdrawPhone, setWithdrawPhone] = useState("");
+  const [withdrawOperator, setWithdrawOperator] = useState("");
+  const WITHDRAWAL_FEE_PERCENT = 2;
   const [withdrawing, setWithdrawing] = useState(false);
   const [withdrawMsg, setWithdrawMsg] = useState(null);
 
@@ -157,13 +159,13 @@ export default function EarningsTab({ token }) {
   };
 
   const handleWithdraw = async () => {
-    if (!withdrawAmount || !withdrawPhone) return;
+    if (!withdrawAmount || !withdrawPhone || !withdrawOperator) return;
     setWithdrawing(true);
     setWithdrawMsg(null);
     try {
       const res = await fetch(API + "/earnings/withdraw", {
         method: "POST", headers,
-        body: JSON.stringify({ amount: parseFloat(withdrawAmount), phone: withdrawPhone })
+        body: JSON.stringify({ amount: parseFloat(withdrawAmount), phone: withdrawPhone, operator: withdrawOperator })
       });
       const data = await res.json();
       if (res.ok) {
@@ -305,11 +307,42 @@ export default function EarningsTab({ token }) {
                 <input type="tel" value={withdrawPhone} onChange={ev => setWithdrawPhone(ev.target.value)} placeholder="07 XX XX XX XX" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: 8, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", fontFamily: T.font }} />
               </div>
             </div>
-            <button onClick={handleWithdraw} disabled={withdrawing || !withdrawAmount || !withdrawPhone} style={{
-              width: "100%", background: (withdrawing || !withdrawAmount || !withdrawPhone) ? "rgba(255,255,255,0.04)" : T.accent,
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, color: T.textMuted, display: "block", marginBottom: 6 }}>{"Opérateur"}</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+                {[
+                  { id: "orange", label: "Orange" },
+                  { id: "mtn", label: "MTN" },
+                  { id: "wave", label: "Wave" },
+                  { id: "moov", label: "Moov" },
+                ].map(op => (
+                  <button key={op.id} type="button" onClick={() => setWithdrawOperator(op.id)} style={{
+                    background: withdrawOperator === op.id ? T.accentDim : T.bg,
+                    border: "1px solid " + (withdrawOperator === op.id ? T.accent : T.border),
+                    borderRadius: 8, padding: "9px 0",
+                    color: withdrawOperator === op.id ? T.accent : T.textMuted,
+                    fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font
+                  }}>{op.label}</button>
+                ))}
+              </div>
+            </div>
+            {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
+              <div style={{ background: T.bg, borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: T.textMuted }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                  <span>{"Frais de retrait (" + WITHDRAWAL_FEE_PERCENT + "%)"}</span>
+                  <span>{"-" + fcfa(parseFloat(withdrawAmount) * WITHDRAWAL_FEE_PERCENT / 100) + " F"}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, color: T.text }}>
+                  <span>Vous recevrez</span>
+                  <span>{fcfa(parseFloat(withdrawAmount) * (1 - WITHDRAWAL_FEE_PERCENT / 100)) + " F"}</span>
+                </div>
+              </div>
+            )}
+            <button onClick={handleWithdraw} disabled={withdrawing || !withdrawAmount || !withdrawPhone || !withdrawOperator} style={{
+              width: "100%", background: (withdrawing || !withdrawAmount || !withdrawPhone || !withdrawOperator) ? "rgba(255,255,255,0.04)" : T.accent,
               border: "none", borderRadius: 10, padding: "12px 0",
-              color: (withdrawing || !withdrawAmount || !withdrawPhone) ? T.textMuted : "#fff",
-              fontSize: 14, fontWeight: 700, cursor: (withdrawing || !withdrawAmount || !withdrawPhone) ? "default" : "pointer",
+              color: (withdrawing || !withdrawAmount || !withdrawPhone || !withdrawOperator) ? T.textMuted : "#fff",
+              fontSize: 14, fontWeight: 700, cursor: (withdrawing || !withdrawAmount || !withdrawPhone || !withdrawOperator) ? "default" : "pointer",
               fontFamily: T.font
             }}>{withdrawing ? "Envoi en cours..." : "Confirmer le retrait"}</button>
           </div>
