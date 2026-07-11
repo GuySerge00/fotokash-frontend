@@ -7,14 +7,36 @@ const settingGroups = {
   'Général': ['platform_name', 'platform_email', 'currency', 'maintenance_mode'],
   'Photos & Upload': ['max_upload_size_mb', 'max_photos_per_upload', 'watermark_text', 'photo_editing_enabled'],
   'Reconnaissance faciale': ['face_search_threshold'],
-  'Tarifs clients': ['photo_price_1', 'photo_price_6', 'photo_price_10'],
+  'Tarifs clients': ['photo_price_1', 'photo_price_3', 'photo_price_5'],
 };
 
 const settingIcons = {
-  'Général': '🏠',
-  'Photos & Upload': '📷',
-  'Reconnaissance faciale': '🔍',
-  'Tarifs clients': '💰',
+  'Général': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  ),
+  'Photos & Upload': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  ),
+  'Reconnaissance faciale': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  ),
+  'Tarifs clients': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="6" />
+      <path d="M18.09 10.37A6 6 0 1 1 10.34 18" />
+      <path d="M7 6h1v4" />
+      <path d="m16.71 13.88.7.71-2.82 2.82" />
+    </svg>
+  ),
 };
 
 const Settings = ({ token }) => {
