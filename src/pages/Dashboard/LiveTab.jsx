@@ -240,7 +240,7 @@ export default function LiveTab({ token, events, onNavigate, setEvents }) {
           </div>
         </div>
 
-        <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "18px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div data-tour="qr-code" style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "18px", display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 13, fontWeight: 600 }}>QR code</span>
             <button onClick={() => { const link = document.createElement("a"); link.href = qrUrlSmall; link.download = "FotoKash-QR-" + liveEvent.slug + ".png"; link.click(); }} style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.04)", border: "1px solid " + T.border, borderRadius: 6, padding: "4px 10px", color: T.textMuted, fontSize: 11, fontWeight: 500, cursor: "pointer", fontFamily: T.font }}>{Icon.ArrowRight(12)} Telecharger</button>

@@ -294,6 +294,7 @@ export default function PhotosTab({ token, events, setEvents }) {
 
       {/* Drop zone */}
       <div
+        data-tour="upload-zone"
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={(e) => { e.preventDefault(); setDragOver(false); }}
         onDrop={handleDrop}

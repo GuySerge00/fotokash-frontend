@@ -115,7 +115,7 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700 }}>Mes événements</h2>
-        <Btn onClick={() => setShowForm(!showForm)}>{Icon.Plus(16)} Nouvel événement</Btn>
+        <Btn data-tour="new-event" onClick={() => setShowForm(!showForm)}>{Icon.Plus(16)} Nouvel événement</Btn>
       </div>
 
       {showForm && (
@@ -182,7 +182,7 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
 
                 {/* Menu ⋯ */}
                 <div style={{ position: "relative", flexShrink: 0, marginLeft: 10 }} onClick={(ev) => ev.stopPropagation()}>
-                  <button onClick={() => setMenuOpen(menuOpen === e.id ? null : e.id)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid " + T.border, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: T.textMuted, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>⋯</button>
+                  <button data-tour="owner-pin-menu" onClick={() => setMenuOpen(menuOpen === e.id ? null : e.id)} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid " + T.border, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: T.textMuted, fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>⋯</button>
                   {menuOpen === e.id && (
                     <div style={{ position: "absolute", right: 0, top: 38, background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, zIndex: 200, minWidth: 170, overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}>
                       {[

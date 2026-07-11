@@ -7,10 +7,15 @@ import LiveTab from "./LiveTab";
 import EventsTab from "./EventsTab";
 import AccountTab from "./AccountTab";
 import EarningsTab from "./EarningsTab";
+import OnboardingTour from "../../components/OnboardingTour";
 
 
 export default function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab }) {
   const [user, setUser] = useState(initialUser);
+  const [showTour, setShowTour] = useState(false);
+  useEffect(() => {
+    if (user && !user.has_seen_onboarding) setShowTour(true);
+  }, [user]);
   const [tab, setTab] = useState(initialTab || "stats");
   const [inactiveMsg, setInactiveMsg] = useState(false);
   const [events, setEvents] = useState([]);
@@ -122,7 +127,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
         overflowX: "auto",
       }}>
         {tabs.map((t) => (
-          <button key={t.id} onClick={() => { setTab(t.id); onNavigate("dashboard", { tab: t.id }); }} style={{
+          <button key={t.id} data-tour={t.id === "earnings" ? "earnings-tab" : undefined} onClick={() => { setTab(t.id); onNavigate("dashboard", { tab: t.id }); }} style={{
             display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
             padding: "10px 18px", borderRadius: T.radiusSm, border: "none",
             background: tab === t.id ? T.accentDim : "transparent",
@@ -176,6 +181,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
           );
         })}
       </div>
+      <OnboardingTour isOpen={showTour} onComplete={() => setShowTour(false)} />
     </div>
   );
 }
