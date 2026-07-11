@@ -18,7 +18,7 @@ const faqs = [
       },
       {
         q: "Quels sont les tarifs pour telecharger mes photos ?",
-        a: "1 photo = 200 FCFA · 6 photos = 500 FCFA · 10 photos et plus = 1 000 FCFA. Le paiement se fait par Mobile Money (Orange Money, Wave, MTN).",
+        a: "1 photo = 200 FCFA · 3 photos = 500 FCFA · 5 photos et plus = 1 000 FCFA. Le paiement se fait par Mobile Money (Orange Money, Wave, MTN).",
       },
       {
         q: "La reconnaissance faciale fonctionne-t-elle si je porte des lunettes ?",

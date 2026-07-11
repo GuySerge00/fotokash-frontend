@@ -58,7 +58,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
-  const [pricing, setPricing] = useState({ price1: 200, price6: 500, price10: 1000 });
+  const [pricing, setPricing] = useState({ price1: 200, price3: 500, price5: 1000 });
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [paymentProvider, setPaymentProvider] = useState("orange");
@@ -223,9 +223,9 @@ export default function LiveEventPage({ slug, onNavigate }) {
   const getPrice = () => {
     const n = selectedPhotos.length;
     if (n === 0) return 0;
-    if (n <= 1) return pricing.price1;
-    if (n <= 6) return pricing.price6;
-    return pricing.price10;
+    if (n >= 5) return pricing.price5;
+    if (n >= 3) return pricing.price3;
+    return n * pricing.price1;
   };
 
   // Libellé du pack actif
@@ -233,8 +233,8 @@ export default function LiveEventPage({ slug, onNavigate }) {
     const n = selectedPhotos.length;
     if (n === 0) return null;
     if (n === 1) return null;
-    if (n <= 6) return `Pack jusqu'à 6 photos`;
-    return `Pack 10+ photos`;
+    if (n <= 4) return `Pack jusqu'à 4 photos`;
+    return `Pack 5+ photos`;
   };
 
   // Prix effectif par photo
@@ -486,8 +486,8 @@ export default function LiveEventPage({ slug, onNavigate }) {
             <p style={{ color: T.textMuted, fontSize: 12, textAlign: "center", marginBottom: 20 }}>Plus tu selectionnes, moins c'est cher !</p>
             {[
               { label: "1 photo", price: pricing.price1, detail: fcfa(pricing.price1) + " / photo", highlight: false },
-              { label: "2 a 6 photos", price: pricing.price6, detail: "soit " + fcfa(Math.round(pricing.price6 / 3)) + " / photo", highlight: true },
-              { label: "7 photos et plus", price: pricing.price10, detail: "soit " + fcfa(Math.round(pricing.price10 / 8)) + " / photo", highlight: false },
+              { label: "3 a 4 photos", price: pricing.price3, detail: "soit " + fcfa(Math.round(pricing.price3 / 3)) + " / photo", highlight: true },
+              { label: "5 photos et plus", price: pricing.price5, detail: "soit " + fcfa(Math.round(pricing.price5 / 5)) + " / photo", highlight: false },
             ].map((tier, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 16px", borderRadius: T.radiusSm, marginBottom: 8, background: tier.highlight ? T.accentDim : "rgba(255,255,255,0.04)", border: "1px solid " + (tier.highlight ? T.accent : T.border) }}>
                 <div>

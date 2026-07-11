@@ -23,7 +23,7 @@ const steps = [
     num: "04",
     title: "Payez et telechargez en HD",
     desc: "Selectionnez une ou plusieurs photos et payez par Mobile Money (Orange Money, Wave, MTN). Le telechargement HD est disponible immediatement apres paiement, sur Android comme sur iPhone.",
-    detail: "1 photo = 200 FCFA · 6 photos = 500 FCFA · 10 photos et plus = 1 000 FCFA.",
+    detail: "1 photo = 200 FCFA · 3 photos = 500 FCFA · 5 photos et plus = 1 000 FCFA.",
   },
 ];
 

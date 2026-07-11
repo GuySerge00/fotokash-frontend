@@ -160,7 +160,7 @@ const [paymentLoading, setPaymentLoading] = useState(false);
   const [mobileMoneyEnabled, setMobileMoneyEnabled] = useState(false);
   const [qrModal, setQrModal] = useState(null);
   const [paymentProvider, setPaymentProvider] = useState("orange");
-  const [pricing, setPricing] = useState({ price1: 200, price6: 500, price10: 1000 });
+  const [pricing, setPricing] = useState({ price1: 200, price3: 500, price5: 1000 });
 
   const handlePayment = () => {
     setShowPaymentModal(true);
@@ -412,9 +412,9 @@ const handleFreeDownload = async () => {
   const getPrice = () => {
     const n = selectedPhotos.length;
     if (n === 0) return 0;
-    if (n <= 1) return pricing.price1;
-    if (n <= 6) return pricing.price6;
-    return pricing.price10;
+    if (n >= 5) return pricing.price5;
+    if (n >= 3) return pricing.price3;
+    return n * pricing.price1;
   };
 
 

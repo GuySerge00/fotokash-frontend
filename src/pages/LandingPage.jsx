@@ -216,8 +216,8 @@ export default function LandingPage({ onNavigate, platform }) {
         }}>
           {[
             { photos: "1 photo", price: "200 FCFA" },
-            { photos: "6 photos", price: "500 FCFA", highlight: true },
-            { photos: "10+ photos", price: "1 000 FCFA" },
+            { photos: "3 photos", price: "500 FCFA", highlight: true },
+            { photos: "5+ photos", price: "1 000 FCFA" },
           ].map((p, i) => (
             <div key={i} style={{
               flex: "1 1 180px", background: T.card,
