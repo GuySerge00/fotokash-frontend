@@ -181,7 +181,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
           );
         })}
       </div>
-      <OnboardingTour isOpen={showTour} onComplete={() => setShowTour(false)} />
+      <OnboardingTour isOpen={showTour} onComplete={() => setShowTour(false)} onNeedTab={setTab} />
     </div>
   );
 }

@@ -1,38 +1,46 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { API } from '../utils/tokens';
 
 const STEPS = [
   {
     target: '[data-tour="new-event"]',
+    tab: 'events',
     title: "Créer ton premier événement",
     text: "Chaque mariage, baptême ou événement corporate que tu couvres devient un espace dédié. Donne-lui un nom, une date, et tu es prêt à uploader tes photos.",
   },
   {
     target: '[data-tour="upload-zone"]',
+    tab: 'photos',
     title: "Ajoute tes photos à l'événement",
     text: "Une fois l'événement créé, dépose tes photos. Elles sont automatiquement protégées (pas de téléchargement direct) et prêtes à être vendues.",
   },
   {
     target: '[data-tour="qr-code"]',
+    tab: 'live',
     title: "Partage l'accès à tes clients",
     text: "Chaque événement a un QR code unique. Tes clients le scannent, retrouvent leurs photos (grâce à la reconnaissance faciale) et peuvent les acheter directement.",
   },
   {
     target: '[data-tour="earnings-tab"]',
+    tab: 'earnings',
     title: "Suis tes revenus en temps réel",
     text: "Chaque vente apparaît ici : montant brut, commission FotoKash, et solde disponible. Tu peux demander un retrait Mobile Money dès que ton solde le permet (frais de retrait : 2%).",
   },
   {
     target: '[data-tour="owner-pin-menu"]',
+    tab: 'events',
     title: "Un code pour l'organisateur de l'événement",
     text: "Si l'organisateur veut télécharger toutes les photos sans payer (pack Business), donne-lui le PIN visible dans le menu ⋯ de l'événement.",
   },
 ];
 
-function useTargetRect(selector, active) {
+function useTargetRect(selector, active, tab, onNeedTab) {
   const [rect, setRect] = useState(null);
 
   useLayoutEffect(() => {
     if (!active) return;
+    setRect(null);
+    if (tab && onNeedTab) onNeedTab(tab);
 
     function measure() {
       const el = document.querySelector(selector);
@@ -45,21 +53,21 @@ function useTargetRect(selector, active) {
       }
     }
 
-    const t = setTimeout(measure, 250);
+    const t = setTimeout(measure, 350);
     window.addEventListener('resize', measure);
     return () => {
       clearTimeout(t);
       window.removeEventListener('resize', measure);
     };
-  }, [selector, active]);
+  }, [selector, active, tab]);
 
   return rect;
 }
 
-export default function OnboardingTour({ isOpen, onComplete }) {
+export default function OnboardingTour({ isOpen, onComplete, onNeedTab }) {
   const [stepIndex, setStepIndex] = useState(0);
   const step = STEPS[stepIndex];
-  const rect = useTargetRect(step?.target, isOpen);
+  const rect = useTargetRect(step?.target, isOpen, step?.tab, onNeedTab);
   const cardRef = useRef(null);
 
   useEffect(() => {
@@ -79,10 +87,15 @@ export default function OnboardingTour({ isOpen, onComplete }) {
   }
 
   function finish() {
-    fetch('/api/earnings/onboarding-seen', {
+    const token = localStorage.getItem('fotokash_token');
+    fetch(API + '/earnings/onboarding-seen', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('fotokash_token')}` },
-    }).catch(() => {});
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (!res.ok) console.error('onboarding-seen a échoué, code', res.status);
+      })
+      .catch((err) => console.error('onboarding-seen erreur réseau', err));
     onComplete();
   }
 
