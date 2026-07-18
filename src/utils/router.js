@@ -1,5 +1,6 @@
 export const TITLES = {
   landing: "FotoKash - Plateforme photo événementielle",
+  evenements: "Événements — FotoKash",
   login: "Connexion - FotoKash",
   signup: "Inscription - FotoKash",
   dashboard: "Dashboard - FotoKash",
@@ -37,6 +38,7 @@ export function screenToUrl(s, props = {}) {
     return p && p !== "dashboard" ? "/admin/" + p : "/admin";
   }
   if (s === "qr-photo") return "/p/" + (props.qrCode || "");
+  if (s === "evenements") return "/evenements";
   return "/";
 }
 
@@ -54,6 +56,7 @@ export function urlToScreenProps(path) {
   if (path === "/legal") return { screen: "legal", props: {} };
   if (path === "/faq") return { screen: "faq", props: {} };
   if (path === "/comment-ca-marche") return { screen: "howto", props: {} };
+  if (path === "/evenements") return { screen: "evenements", props: {} };
   if (path === "/admin" || path.startsWith("/admin/")) {
     const page = path.replace("/admin", "").replace("/", "") || "dashboard";
     return { screen: "admin", props: { page } };

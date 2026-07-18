@@ -11,6 +11,7 @@ import AdminLayout from "./admin/AdminLayout";
 import LiveEventPage from "./LiveEventPage";
 import LegalPage from "./LegalPage";
 import FaqPage from "./pages/FaqPage";
+import EventsDirectory from "./pages/EventsDirectory";
 import HowItWorksPage from "./pages/HowItWorksPage";
 
 export default function FotoKashApp() {
@@ -113,6 +114,7 @@ export default function FotoKashApp() {
       {(screen === "client" || screen === "client-demo") && <ClientPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "legal" && <LegalPage tab={screenProps.tab} onNavigate={navigate} />}
       {screen === "faq" && <FaqPage navigate={navigate} />}
+      {screen === "evenements" && <EventsDirectory onNavigate={navigate} />}
       {screen === "howto" && <HowItWorksPage navigate={navigate} />}
       {screen === "live" && <LiveEventPage slug={screenProps.slug} onNavigate={navigate} />}
       {screen === "admin" && <AdminLayout user={user} token={token} onNavigate={navigate} onLogout={handleLogout} initialPage={screenProps.page} />}

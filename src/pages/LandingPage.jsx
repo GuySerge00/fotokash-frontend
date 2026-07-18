@@ -11,6 +11,8 @@ export default function LandingPage({ onNavigate, platform }) {
       <nav className="landing-nav" style={{
         display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "16px 20px", borderBottom: `1px solid ${T.border}`, flexWrap: "wrap", gap: 10,
+        position: "sticky", top: 0, zIndex: 50,
+        background: T.bg || "#0f0f12", backdropFilter: "blur(8px)",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
@@ -22,6 +24,7 @@ export default function LandingPage({ onNavigate, platform }) {
           </span>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
+          <Btn variant="ghost" onClick={() => onNavigate("evenements")}>Événements</Btn>
           <Btn variant="ghost" onClick={() => onNavigate("auth", { mode: "login" })}>Connexion</Btn>
           <Btn onClick={() => onNavigate("auth", { mode: "signup" })}>Inscription</Btn>
         </div>
@@ -247,6 +250,7 @@ export default function LandingPage({ onNavigate, platform }) {
           <span onClick={() => onNavigate("legal", { tab: "cgu" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>CGU / CGV</span>
           <span onClick={() => onNavigate("legal", { tab: "confidentialite" })} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Politique de confidentialité</span>
           <span onClick={() => onNavigate("faq")} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>FAQ</span>
+          <span onClick={() => onNavigate("evenements")} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Événements</span>
           <span onClick={() => onNavigate("howto")} style={{ cursor: "pointer", color: T.textMuted, textDecoration: "underline" }}>Comment ca marche</span>
         </div>
       </footer>
