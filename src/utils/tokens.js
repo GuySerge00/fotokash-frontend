@@ -34,6 +34,7 @@ export const globalCSS = `
   input, select, textarea { font-family: 'DM Sans', system-ui, sans-serif; }
   @media (max-width: 768px) {
     .landing-nav { padding: 12px 14px !important; }
+    .landing-nav > div:last-child { flex: 1 1 100% !important; justify-content: center !important; }
     .landing-nav button { padding: 8px 14px !important; font-size: 12px !important; }
     .desktop-tab-bar { display: none !important; }
     .mobile-logout-btn { display: flex !important; }
