@@ -36,12 +36,25 @@ export default function LandingPage({ onNavigate, platform }) {
         justifyContent: "center", textAlign: "center", padding: "60px 24px",
         position: "relative", overflow: "hidden",
       }}>
+        {/* BG image */}
+        <div style={{
+          position: "absolute", inset: 0,
+          backgroundImage: "url(/hero-camera.jpg)",
+          backgroundSize: "cover", backgroundPosition: "center",
+          pointerEvents: "none", zIndex: 0,
+        }} />
+        {/* BG overlay */}
+        <div style={{
+          position: "absolute", inset: 0,
+          background: "linear-gradient(180deg, rgba(15,15,18,0.55) 0%, rgba(15,15,18,0.75) 100%)",
+          pointerEvents: "none", zIndex: 0,
+        }} />
         {/* BG glow */}
         <div style={{
           position: "absolute", top: "20%", left: "50%", transform: "translate(-50%, -50%)",
           width: 600, height: 600, borderRadius: "50%",
           background: `radial-gradient(circle, ${T.accentDim} 0%, transparent 70%)`,
-          pointerEvents: "none",
+          pointerEvents: "none", zIndex: 0,
         }} />
 
         <div style={{ position: "relative", animation: "fadeUp 0.6s ease" }}>
