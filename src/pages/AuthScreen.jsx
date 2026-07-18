@@ -79,6 +79,22 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
   ) : null;
 
   return (
+    <>
+      <div style={{ display: "flex", alignItems: "center",
+           padding: "16px 20px", borderBottom: `1px solid ${T.border}`,
+           position: "sticky", top: 0, zIndex: 50,
+           background: T.bg || "#0f0f12", backdropFilter: "blur(8px)" }}>
+        <div onClick={() => onNavigate("landing")}
+             style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: T.accent,
+                        display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+            {Icon.Camera(20)}
+          </div>
+          <span style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, letterSpacing: "-0.02em" }}>
+            Foto<span style={{ color: T.accent }}>Kash</span>
+          </span>
+        </div>
+      </div>
     <div style={{
       minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
       padding: 24, position: "relative",
@@ -91,17 +107,9 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
       }} />
 
       <div style={{ position: "relative", width: "100%", maxWidth: 400, animation: "fadeUp 0.4s ease" }}>
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 28, cursor: "pointer" }} onClick={() => onNavigate("landing")}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14, background: T.accent,
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            color: "#fff", marginBottom: 12,
-          }}>{Icon.Camera(24)}</div>
-          <div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 700 }}>
-            Foto<span style={{ color: T.accent }}>Kash</span>
-          </div>
-          <div style={{ color: T.textMuted, fontSize: 12, marginTop: 4 }}>
+        {/* Tagline */}
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <div style={{ color: T.textMuted, fontSize: 13 }}>
             La plateforme des photographes événementiels
           </div>
         </div>
@@ -274,6 +282,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
