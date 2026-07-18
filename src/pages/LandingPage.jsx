@@ -33,7 +33,7 @@ export default function LandingPage({ onNavigate, platform }) {
       {/* Hero */}
       <div style={{
         flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-        justifyContent: "center", textAlign: "center", padding: "60px 24px",
+        justifyContent: "center", textAlign: "center", padding: "60px 24px 40px",
         position: "relative", overflow: "hidden",
       }}>
         {/* BG image */}
@@ -57,9 +57,9 @@ export default function LandingPage({ onNavigate, platform }) {
           pointerEvents: "none", zIndex: 0,
         }} />
 
-        <div style={{ position: "relative", animation: "fadeUp 0.6s ease" }}>
+        <div style={{ position: "relative", animation: "fadeUp 0.6s ease forwards" }}>
           <div style={{
-            display: "inline-block", background: T.accentDim, color: T.accent,
+            display: "inline-block", background: T.accentDim, color: "#fff",
             padding: "6px 16px", borderRadius: 20, fontSize: 12, fontWeight: 600,
             marginBottom: 24, letterSpacing: "0.05em",
           }}>
@@ -90,8 +90,8 @@ export default function LandingPage({ onNavigate, platform }) {
 
         {/* Feature pills */}
         <div style={{
-          display: "flex", gap: 24, marginTop: 64, flexWrap: "wrap", justifyContent: "center",
-          animation: "fadeUp 0.8s ease",
+          display: "flex", gap: 24, marginTop: 32, flexWrap: "wrap", justifyContent: "center",
+          animation: "fadeUp 0.8s ease forwards",
         }}>
           {[
             { icon: Icon.Camera(16), text: "Upload en lot" },
