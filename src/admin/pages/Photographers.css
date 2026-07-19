@@ -202,3 +202,17 @@
   align-items: center;
   margin-top: 8px;
 }
+
+/* Ajouts refonte juillet 2026 */
+.photo-card.dormant { opacity: 0.55; }
+.photo-card.dormant:hover { opacity: 0.85; }
+.photo-card.add-card { cursor: pointer; transition: all 0.15s; }
+.photo-card.add-card:hover { border-color: #E8593C; background: rgba(232,89,60,0.04); }
+.photo-detail-page { }
+
+.action-btn.neutral { background: rgba(255,255,255,0.06); color: #c8c8d8; }
+.action-btn.neutral:hover { background: rgba(255,255,255,0.1); }
+.action-btn.warn { background: rgba(255,184,38,0.1); color: #FFB826; }
+.action-btn.warn:hover { background: rgba(255,184,38,0.18); }
+.action-btn.danger-solid { background: #EF4444; color: #fff; }
+.action-btn.danger-solid:hover { opacity: 0.9; }
