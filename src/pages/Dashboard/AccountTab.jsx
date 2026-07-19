@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { T, API } from "../../utils/tokens";
+import { Icon } from "../../utils/icons";
 
 
-export default function AccountTab({ token }) {
+export default function AccountTab({ token, user, onUserUpdate }) {
   const [currentPwd, setCurrentPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confirmPwd, setConfirmPwd] = useState("");
@@ -11,6 +12,12 @@ export default function AccountTab({ token }) {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const [formName, setFormName] = useState(user?.studio_name || "");
+  const [formEmail, setFormEmail] = useState(user?.email || "");
+  const [formPhone, setFormPhone] = useState(user?.phone || "");
+  const [profileMsg, setProfileMsg] = useState({ text: "", color: T.textMuted });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const validate = () => {
     if (!currentPwd || !newPwd || !confirmPwd) { setMsg({ text: "Remplissez tous les champs.", color: T.red }); return false; }
@@ -54,39 +61,136 @@ export default function AccountTab({ token }) {
     </button>
   );
 
+  const pwdStrength = (pwd) => {
+    if (!pwd) return 0;
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[0-9]/.test(pwd)) score++;
+    if (/[^A-Za-z0-9]/.test(pwd)) score++;
+    return score;
+  };
+  const strength = pwdStrength(newPwd);
+
+  const handleSaveProfile = async () => {
+    if (!formName.trim() || !formEmail.trim()) {
+      setProfileMsg({ text: "Nom et email requis.", color: T.red });
+      return;
+    }
+    setSavingProfile(true);
+    setProfileMsg({ text: "Enregistrement...", color: T.textMuted });
+    try {
+      const res = await fetch(API + "/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ studio_name: formName, email: formEmail, phone: formPhone }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProfileMsg({ text: "✓ Profil mis à jour !", color: T.green });
+        if (onUserUpdate) onUserUpdate((prev) => ({ ...prev, ...data.user }));
+      } else {
+        setProfileMsg({ text: data.error || "Erreur", color: T.red });
+      }
+    } catch {
+      setProfileMsg({ text: "Erreur de connexion.", color: T.red });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const studioName = user?.studio_name || user?.name || "Photographe";
+  const initials = studioName.split(" ").filter(Boolean).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+  const plan = user?.plan;
+
   return (
     <div>
-      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, marginBottom: 24, fontWeight: 700 }}>Mon compte</h2>
-      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "28px 24px", maxWidth: 450 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Changer le mot de passe</h3>
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Mot de passe actuel</label>
-          <div style={{ position: "relative" }}>
-            <input type={showCurrent ? "text" : "password"} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Votre mot de passe actuel" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-            {eyeBtn(showCurrent, setShowCurrent)}
+      <h2 style={{ fontFamily: T.fontDisplay, fontSize: 22, fontWeight: 700, marginBottom: 20 }}>Mon compte</h2>
+
+      {/* Carte profil */}
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "22px 24px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: T.fontDisplay, fontSize: 20, fontWeight: 700 }}>
+              {initials}
+            </div>
+            <div title="Bientôt disponible" style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: T.accent, border: "2px solid " + T.card, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "default", opacity: 0.85 }}>
+              {Icon.Edit(11)}
+            </div>
+          </div>
+          <div>
+            <div style={{ fontFamily: T.fontDisplay, fontSize: 17, fontWeight: 700, marginBottom: 2 }}>{studioName}</div>
+            <div style={{ fontSize: 12, color: T.textMuted }}>{user?.email || "—"} · {user?.phone || "—"}</div>
           </div>
         </div>
-        <div style={{ marginBottom: 14 }}>
-          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Nouveau mot de passe</label>
-          <div style={{ position: "relative" }}>
-            <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Minimum 8 caractères" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-            {eyeBtn(showNew, setShowNew)}
+        {plan && (
+          <span style={{
+            fontSize: 11, fontWeight: 700, padding: "5px 14px", borderRadius: 20,
+            background: plan === "pro" ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)",
+            color: plan === "pro" ? T.gold : T.textDim,
+            textTransform: "uppercase", letterSpacing: 1,
+          }}>Plan {plan}</span>
+        )}
+      </div>
+
+      {/* Infos + mot de passe */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
+        {/* Informations personnelles */}
+        <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "24px 22px" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Informations personnelles</h3>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Nom complet</label>
+            <input value={formName} onChange={e => setFormName(e.target.value)} style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
           </div>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Confirmer le nouveau mot de passe</label>
-          <div style={{ position: "relative" }}>
-            <input type={showConfirm ? "text" : "password"} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Retapez le nouveau mot de passe" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-            {eyeBtn(showConfirm, setShowConfirm)}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Email</label>
+            <input type="email" value={formEmail} onChange={e => setFormEmail(e.target.value)} style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
           </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Téléphone Mobile Money</label>
+            <input type="tel" value={formPhone} onChange={e => setFormPhone(e.target.value)} placeholder="+225 07 00 00 00 00" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          </div>
+          {profileMsg.text && <p style={{ fontSize: 13, marginBottom: 16, color: profileMsg.color, minHeight: 20 }}>{profileMsg.text}</p>}
+          <button onClick={handleSaveProfile} disabled={savingProfile} style={{ width: "100%", background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 700, cursor: savingProfile ? "not-allowed" : "pointer", opacity: savingProfile ? 0.7 : 1, fontFamily: T.font }}>
+            {savingProfile ? "Enregistrement..." : "Enregistrer"}
+          </button>
         </div>
-        {msg.text && <p style={{ fontSize: 13, marginBottom: 16, color: msg.color, minHeight: 20 }}>{msg.text}</p>}
-        <button onClick={handleChange} disabled={loading} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 600, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: T.font }}>
-          {loading ? "Modification..." : "Modifier le mot de passe"}
-        </button>
+
+        {/* Changer le mot de passe */}
+        <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "24px 22px" }}>
+          <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 20 }}>Changer le mot de passe</h3>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Mot de passe actuel</label>
+            <div style={{ position: "relative" }}>
+              <input type={showCurrent ? "text" : "password"} value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Votre mot de passe actuel" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              {eyeBtn(showCurrent, setShowCurrent)}
+            </div>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Nouveau mot de passe</label>
+            <div style={{ position: "relative" }}>
+              <input type={showNew ? "text" : "password"} value={newPwd} onChange={e => setNewPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Minimum 8 caractères" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              {eyeBtn(showNew, setShowNew)}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+            {[0, 1, 2, 3].map(i => (
+              <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i < strength ? T.accent : "rgba(255,255,255,0.08)" }} />
+            ))}
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>Confirmer le nouveau mot de passe</label>
+            <div style={{ position: "relative" }}>
+              <input type={showConfirm ? "text" : "password"} value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} onKeyDown={onKeyDown} placeholder="Retapez le nouveau mot de passe" style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 44px 12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+              {eyeBtn(showConfirm, setShowConfirm)}
+            </div>
+          </div>
+          {msg.text && <p style={{ fontSize: 13, marginBottom: 16, color: msg.color, minHeight: 20 }}>{msg.text}</p>}
+          <button onClick={handleChange} disabled={loading} style={{ width: "100%", background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 700, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, fontFamily: T.font }}>
+            {loading ? "Modification..." : "Modifier le mot de passe"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-

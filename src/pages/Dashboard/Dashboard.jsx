@@ -155,7 +155,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
         {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
         {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
         {tab === "earnings" && <EarningsTab token={token} />}
-        {tab === "account" && <AccountTab token={token} />}
+        {tab === "account" && <AccountTab token={token} user={user} onUserUpdate={setUser} />}
       </div>
       {/* BOTTOM NAV MOBILE */}
       <div className="mobile-bottom-nav" style={{
