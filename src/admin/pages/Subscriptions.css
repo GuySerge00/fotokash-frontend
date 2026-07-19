@@ -1,4 +1,4 @@
-.subscriptions-page { max-width: 1100px; }
+.subscriptions-page { }
 .sub-header { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .sub-title { font-size: 24px; font-weight: 600; color: #f0f0f5; margin: 0; }
 .sub-subtitle { font-size: 14px; color: #6b6b80; margin: 4px 0 0; }
@@ -196,7 +196,7 @@
 }
 
 .period-btn:hover { color: #a0a0b5; }
-.period-btn.active { background: rgba(232,89,60,0.12); color: #E8593C; }
+.period-btn.active { background: #E8593C; color: #fff; font-weight: 700; }
 
 @media (max-width: 900px) {
   .plans-grid { grid-template-columns: 1fr; }

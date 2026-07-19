@@ -212,20 +212,20 @@ const Subscriptions = ({ token, showToast }) => {
           <h1 className="sub-title">Abonnements & Commissions</h1>
           <p className="sub-subtitle">Gérez les plans et suivez les revenus FotoKash</p>
         </div>
-        <div style={{ display:'flex',alignItems:'center',gap:10,flexWrap:'wrap' }}>
-          <div className="comm-period-selector">
+        <div style={{ display:'flex',alignItems:'center',gap:10,flexWrap:'nowrap' }}>
+          <button
+            onClick={() => setRefreshKey(k => k + 1)}
+            style={{ flexShrink:0,height:38,boxSizing:'border-box',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,padding:'0 14px',color:'#8888A0',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:6,whiteSpace:'nowrap' }}
+          >
+            <IconRefresh /> Actualiser
+          </button>
+          <div className="comm-period-selector" style={{ flexShrink:0,height:38,boxSizing:'border-box',margin:0 }}>
             {[{key:'today',label:"Aujourd'hui"},{key:'7d',label:'7 jours'},{key:'30d',label:'30 jours'}].map(p => (
               <button key={p.key} className={`period-btn ${period === p.key ? 'active' : ''}`} onClick={() => setPeriod(p.key)}>
                 {p.label}
               </button>
             ))}
           </div>
-          <button
-            onClick={() => setRefreshKey(k => k + 1)}
-            style={{ background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,padding:'8px 14px',color:'#8888A0',fontSize:13,cursor:'pointer',display:'flex',alignItems:'center',gap:6 }}
-          >
-            <IconRefresh /> Actualiser
-          </button>
         </div>
       </div>
 
