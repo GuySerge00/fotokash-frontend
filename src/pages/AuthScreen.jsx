@@ -57,6 +57,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
   };
 
   const handleKeyDown = (e) => { if (e.key === "Enter") handleSubmit(); };
+  const handleFormSubmit = (e) => { e.preventDefault(); handleSubmit(); };
 
   const inputBase = {
     width: "100%", padding: "11px 14px", borderRadius: T.radiusSm,
@@ -125,7 +126,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
             padding: 3, marginBottom: 28,
           }}>
             {["login", "signup"].map((m) => (
-              <button key={m} onClick={() => { setMode(m); setError(""); setFieldErrors({}); }} style={{
+              <button key={m} type="button" onClick={() => { setMode(m); setError(""); setFieldErrors({}); }} style={{
                 flex: 1, padding: "10px 0", borderRadius: 8, border: "none",
                 background: mode === m ? T.cardAlt : "transparent",
                 color: mode === m ? T.text : T.textMuted,
@@ -137,6 +138,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
             ))}
           </div>
 
+          <form onSubmit={handleFormSubmit}>
           {/* Champs inscription */}
           {mode === "signup" && (
             <>
@@ -147,9 +149,9 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
                 <input
                   style={{ ...inputBase, borderColor: fieldErrors.name ? T.red : T.border }}
                   placeholder="Ex: Studio Lumière CI"
+                  autoComplete="organization"
                   value={form.name}
                   onChange={(e) => { setForm({ ...form, name: e.target.value }); setFieldErrors(p => ({ ...p, name: "" })); }}
-                  onKeyDown={handleKeyDown}
                 />
                 <FieldError msg={fieldErrors.name} />
               </div>
@@ -158,6 +160,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
                 <input
                   style={inputBase}
                   placeholder="+225 07 XX XX XX XX"
+                  autoComplete="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   onKeyDown={handleKeyDown}
@@ -175,9 +178,9 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
               type="email"
               style={{ ...inputBase, borderColor: fieldErrors.email ? T.red : T.border }}
               placeholder="vous@email.com"
+              autoComplete="email"
               value={form.email}
               onChange={(e) => { setForm({ ...form, email: e.target.value }); setFieldErrors(p => ({ ...p, email: "" })); }}
-              onKeyDown={handleKeyDown}
             />
             <FieldError msg={fieldErrors.email} />
           </div>
@@ -200,9 +203,9 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
                 type={showPassword ? "text" : "password"}
                 style={{ ...inputBase, paddingRight: 42, borderColor: fieldErrors.password ? T.red : T.border }}
                 placeholder="••••••••"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
                 value={form.password}
                 onChange={(e) => { setForm({ ...form, password: e.target.value }); setFieldErrors(p => ({ ...p, password: "" })); }}
-                onKeyDown={handleKeyDown}
               />
               <button
                 type="button"
@@ -238,9 +241,9 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
                   type={showConfirm ? "text" : "password"}
                   style={{ ...inputBase, paddingRight: 42, borderColor: fieldErrors.confirm ? T.red : form.confirm && form.confirm === form.password ? T.green : T.border }}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   value={form.confirm}
                   onChange={(e) => { setForm({ ...form, confirm: e.target.value }); setFieldErrors(p => ({ ...p, confirm: "" })); }}
-                  onKeyDown={handleKeyDown}
                 />
                 <button
                   type="button"
@@ -269,7 +272,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
           )}
 
           {/* Bouton submit */}
-          <Btn onClick={handleSubmit} disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "13px 0" }}>
+          <Btn type="submit" disabled={loading} style={{ width: "100%", justifyContent: "center", padding: "13px 0" }}>
             {loading ? (
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", animation: "spin 0.7s linear infinite", display: "inline-block" }} />
@@ -279,6 +282,7 @@ export default function AuthScreen({ mode: initialMode, onNavigate, onAuth }) {
               mode === "login" ? "Se connecter" : "Créer mon compte"
             )}
           </Btn>
+          </form>
         </div>
       </div>
     </div>
