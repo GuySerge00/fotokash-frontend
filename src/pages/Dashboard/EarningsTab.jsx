@@ -10,6 +10,13 @@ const WalletIcon = (s=20) => <svg width={s} height={s} viewBox="0 0 24 24" fill=
 const WithdrawIcon = (s=18) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>;
 const HistoryIcon = (s=18) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
 
+const operatorMeta = {
+  wave:   { label: 'Wave', bg: 'rgba(56,189,248,0.15)', color: '#38BDF8' },
+  orange: { label: 'Orange', bg: 'rgba(249,115,22,0.15)', color: '#F97316' },
+  mtn:    { label: 'MTN', bg: 'rgba(250,204,21,0.15)', color: '#FACC15' },
+  moov:   { label: 'Moov', bg: 'rgba(34,197,94,0.15)', color: '#22C55E' },
+};
+
 const periods = [
   { key: "today", label: "Aujourd'hui" },
   { key: "7d", label: "7j" },
@@ -236,8 +243,8 @@ export default function EarningsTab({ token }) {
             <div style={{ display: "flex", background: T.card, border: "1px solid " + T.border, borderRadius: T.radiusSm, overflow: "hidden" }}>
               {periods.map(p => (
                 <button key={p.key} onClick={() => { if (p.key === "custom") { setShowCalendar(!showCalendar); setSelectStep(0); } else { setPeriod(p.key); setShowCalendar(false); } }} style={{
-                  background: period === p.key ? T.accentDim : "transparent", border: "none", padding: "7px 12px",
-                  color: period === p.key ? T.accent : T.textMuted, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: T.font, display: "flex", alignItems: "center", borderRadius: 8
+                  background: period === p.key ? T.accent : "transparent", border: "none", padding: "7px 12px",
+                  color: period === p.key ? "#fff" : T.textMuted, fontSize: 12, fontWeight: period === p.key ? 700 : 600, cursor: "pointer", fontFamily: T.font, display: "flex", alignItems: "center", borderRadius: 8
                 }}>{p.label}</button>
               ))}
             </div>
@@ -373,7 +380,7 @@ export default function EarningsTab({ token }) {
       </div>
 
       {/* Section tabs */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid " + T.border }}>
+      <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid " + T.border, overflowX: "auto", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
         {[
           { id: "overview", label: "Par événement", icon: Icon.Calendar(14), count: (history?.by_event || []).length },
           { id: "transactions", label: "Transactions", icon: HistoryIcon(14), count: (history?.transactions || []).length },
@@ -382,7 +389,8 @@ export default function EarningsTab({ token }) {
           <button key={s.id} onClick={() => setSection(s.id)} style={{
             background: "none", border: "none", borderBottom: section === s.id ? "2px solid " + T.accent : "2px solid transparent",
             padding: "10px 18px", color: section === s.id ? T.accent : T.textMuted,
-            fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: T.font
+            fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: T.font,
+            flexShrink: 0, whiteSpace: "nowrap"
           }}>
             {s.icon} {s.label}
             <span style={{
@@ -430,30 +438,44 @@ export default function EarningsTab({ token }) {
             <div style={{ padding: 32, textAlign: "center", color: T.textMuted, fontSize: 13 }}>Aucune transaction</div>
           ) : (
             <div>
-              <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 11, color: T.textMuted, fontWeight: 600 }}>
-                <span>Date</span><span>{"Événement"}</span><span>Photos</span><span>Moyen</span><span>Montant</span><span>Statut</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr 18px", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 11, color: T.textMuted, fontWeight: 600 }}>
+                <span>Date</span><span>{"Événement"}</span><span>Photos</span><span>Moyen</span><span>Montant</span><span>Statut</span><span></span>
               </div>
-              {history.transactions.map((tx, i) => (
+              {history.transactions.map((tx, i) => {
+                const op = operatorMeta[(tx.payment_method || "").toLowerCase()];
+                const isOpen = expandedTx === tx.id;
+                const statusMeta = tx.status === "completed" ? { label: "Complétée", color: T.green } : tx.status === "failed" ? { label: "Échouée", color: "#EF4444" } : { label: "En attente", color: T.gold };
+                return (
                 <div key={i}>
-                  <div onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 12, alignItems: "center", cursor: "pointer" }}>
+                  <div onClick={() => setExpandedTx(isOpen ? null : tx.id)} style={{ display: "grid", gridTemplateColumns: "1.6fr 1.3fr 0.7fr 1fr 1fr 1fr 18px", padding: "12px 18px", borderBottom: "1px solid " + T.border, fontSize: 12, alignItems: "center", cursor: "pointer" }}>
                     <div>
                       <div style={{ color: T.textMuted }}>{fdate(tx.created_at)}</div>
                       <div style={{ fontSize: 10, color: T.textMuted, opacity: 0.6, fontFamily: "monospace" }} title={tx.reference}>{(tx.reference || "").slice(0, 8)}...</div>
                     </div>
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tx.event_name || "—"}</span>
                     <span style={{ color: T.textMuted }}>{tx.photos_count || "—"}</span>
-                    <span style={{ color: T.textMuted, textTransform: "capitalize" }}>{tx.payment_method || "—"}</span>
+                    <span>
+                      {op ? (
+                        <span style={{ background: op.bg, color: op.color, fontSize: 10, fontWeight: 700, padding: "3px 9px", borderRadius: 20, textTransform: "uppercase" }}>{op.label}</span>
+                      ) : (
+                        <span style={{ color: T.textMuted, textTransform: "capitalize" }}>{tx.payment_method || "—"}</span>
+                      )}
+                    </span>
                     <span style={{ color: tx.status === "completed" ? T.green : T.gold, fontWeight: 600 }}>{fcfa(tx.amount)}</span>
-                    <span style={{ color: tx.status === "completed" ? T.green : tx.status === "failed" ? "#EF4444" : T.gold, fontWeight: 600, fontSize: 11 }}>{tx.status === "completed" ? "Complétée" : tx.status === "failed" ? "Échouée" : "En attente"}</span>
+                    <span>
+                      <span style={{ background: statusMeta.color + "22", color: statusMeta.color, fontWeight: 700, fontSize: 10, padding: "3px 10px", borderRadius: 20 }}>{statusMeta.label}</span>
+                    </span>
+                    <span style={{ color: T.textMuted, display: "flex", justifyContent: "flex-end", transform: isOpen ? "rotate(90deg)" : "none", transition: "transform 0.15s" }}>{Icon.ArrowRight(12)}</span>
                   </div>
-                  {expandedTx === tx.id && (
+                  {isOpen && (
                     <div style={{ padding: "10px 18px", borderBottom: "1px solid " + T.border, background: "rgba(255,255,255,0.02)", fontSize: 11, color: T.textMuted }}>
                       ID transaction : {tx.id}<br />
                       ID(s) photo(s) : {(tx.photo_ids || []).join(", ") || "—"}
                     </div>
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
