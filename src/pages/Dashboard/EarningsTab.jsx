@@ -4,6 +4,7 @@ import { Icon } from "../../utils/icons";
 
 const fcfa = (n) => new Intl.NumberFormat("fr-FR").format(Math.round(n)) + " F";
 const fdate = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fdateShort = (d) => new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
 
 const WalletIcon = (s=20) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>;
 const WithdrawIcon = (s=18) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>;
@@ -207,6 +208,16 @@ export default function EarningsTab({ token }) {
     { label: "Total retiré", value: fcfa(e.total_withdrawn || 0), color: "#818CF8", sub: withdrawals.filter(w => w.status === "approved").length + " retrait(s)" },
   ];
 
+  const minWithdrawal = e.min_withdrawal || 5000;
+  const availableBalance = e.available_balance || 0;
+  const withdrawProgress = Math.min(100, (availableBalance / minWithdrawal) * 100);
+  const missingForWithdrawal = Math.max(0, minWithdrawal - availableBalance);
+
+  const recentActivity = [
+    ...((history?.transactions || []).map((tx, i) => ({ id: "s" + (tx.id || i), type: "sale", date: tx.created_at, label: "Vente photo — " + (tx.event_name || "—"), amount: tx.amount }))),
+    ...((withdrawals || []).map((w, i) => ({ id: "w" + i, type: "withdrawal", date: w.requested_at, label: "Retrait Mobile Money", amount: -w.amount }))),
+  ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
+
   return (
     <div style={{ position: "relative" }}>
       {loading && earnings && (
@@ -261,7 +272,7 @@ export default function EarningsTab({ token }) {
         {kpis.map((k, i) => (
           <div key={i} style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px 18px", animation: "fadeUp 0.4s ease " + (i * 0.1) + "s both" }}>
             <div style={{ fontSize: 12, color: T.textMuted, fontWeight: 500, marginBottom: 10 }}>{k.label}</div>
-            <div style={{ fontFamily: T.fontDisplay, fontSize: 24, fontWeight: 700, color: k.color }}>{k.value}</div>
+            <div style={{ fontFamily: T.fontNumber, fontSize: 24, fontWeight: 700, color: k.color }}>{k.value}</div>
             <div style={{ fontSize: 11, color: T.textMuted, marginTop: 6 }}>{k.sub}</div>
           </div>
         ))}
@@ -278,18 +289,30 @@ export default function EarningsTab({ token }) {
       {/* Withdraw button / form */}
       <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "20px 22px", marginBottom: 20 }}>
         {!showWithdrawForm ? (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Demander un retrait</div>
-              <div style={{ fontSize: 12, color: T.textMuted }}>Minimum {fcfa(e.min_withdrawal || 5000)} · Solde: {fcfa(e.available_balance || 0)}</div>
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Demander un retrait</div>
+                <div style={{ fontSize: 12, color: T.textMuted }}>Minimum {fcfa(minWithdrawal)} · Solde: {fcfa(availableBalance)}</div>
+              </div>
+              <button onClick={() => setShowWithdrawForm(true)} disabled={availableBalance < minWithdrawal} style={{
+                background: availableBalance >= minWithdrawal ? T.accent : "rgba(255,255,255,0.04)",
+                border: "none", borderRadius: 10, padding: "10px 22px",
+                color: availableBalance >= minWithdrawal ? "#fff" : T.textMuted,
+                fontSize: 14, fontWeight: 700, cursor: availableBalance >= minWithdrawal ? "pointer" : "default",
+                fontFamily: T.font, display: "flex", alignItems: "center", gap: 6
+              }}>{WithdrawIcon(16)} Retirer</button>
             </div>
-            <button onClick={() => setShowWithdrawForm(true)} disabled={(e.available_balance || 0) < (e.min_withdrawal || 5000)} style={{
-              background: (e.available_balance || 0) >= (e.min_withdrawal || 5000) ? T.accent : "rgba(255,255,255,0.04)",
-              border: "none", borderRadius: 10, padding: "10px 22px",
-              color: (e.available_balance || 0) >= (e.min_withdrawal || 5000) ? "#fff" : T.textMuted,
-              fontSize: 14, fontWeight: 700, cursor: (e.available_balance || 0) >= (e.min_withdrawal || 5000) ? "pointer" : "default",
-              fontFamily: T.font, display: "flex", alignItems: "center", gap: 6
-            }}>{WithdrawIcon(16)} Retirer</button>
+            {availableBalance < minWithdrawal && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ height: 6, borderRadius: 4, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: withdrawProgress + "%", background: T.accent, borderRadius: 4, transition: "width 0.3s" }} />
+                </div>
+                <div style={{ fontSize: 11, color: T.textMuted, marginTop: 6 }}>
+                  {fcfa(missingForWithdrawal)} restants pour débloquer le retrait
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div>
@@ -300,7 +323,7 @@ export default function EarningsTab({ token }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <div>
                 <label style={{ fontSize: 12, color: T.textMuted, display: "block", marginBottom: 6 }}>Montant (FCFA)</label>
-                <input type="number" value={withdrawAmount} onChange={ev => setWithdrawAmount(ev.target.value)} placeholder={"Min " + (e.min_withdrawal || 5000)} style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: 8, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", fontFamily: T.font }} />
+                <input type="number" value={withdrawAmount} onChange={ev => setWithdrawAmount(ev.target.value)} placeholder={"Min " + minWithdrawal} style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: 8, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", fontFamily: T.font }} />
               </div>
               <div>
                 <label style={{ fontSize: 12, color: T.textMuted, display: "block", marginBottom: 6 }}>{"Numéro Mobile Money"}</label>
@@ -352,15 +375,22 @@ export default function EarningsTab({ token }) {
       {/* Section tabs */}
       <div style={{ display: "flex", gap: 0, marginBottom: 18, borderBottom: "1px solid " + T.border }}>
         {[
-          { id: "overview", label: "Par événement", icon: Icon.Calendar(14) },
-          { id: "transactions", label: "Transactions", icon: HistoryIcon(14) },
-          { id: "withdrawals", label: "Retraits", icon: WithdrawIcon(14) },
+          { id: "overview", label: "Par événement", icon: Icon.Calendar(14), count: (history?.by_event || []).length },
+          { id: "transactions", label: "Transactions", icon: HistoryIcon(14), count: (history?.transactions || []).length },
+          { id: "withdrawals", label: "Retraits", icon: WithdrawIcon(14), count: withdrawals.length },
         ].map(s => (
           <button key={s.id} onClick={() => setSection(s.id)} style={{
             background: "none", border: "none", borderBottom: section === s.id ? "2px solid " + T.accent : "2px solid transparent",
             padding: "10px 18px", color: section === s.id ? T.accent : T.textMuted,
             fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontFamily: T.font
-          }}>{s.icon} {s.label}</button>
+          }}>
+            {s.icon} {s.label}
+            <span style={{
+              background: section === s.id ? T.accentDim : "rgba(255,255,255,0.06)",
+              color: section === s.id ? T.accent : T.textMuted,
+              fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 10, fontFamily: T.fontNumber
+            }}>{s.count}</span>
+          </button>
         ))}
       </div>
 
@@ -378,7 +408,10 @@ export default function EarningsTab({ token }) {
                 var net = Math.round(parseFloat(ev.revenue) * (100 - (earnings?.commission_rate || 0)) / 100);
                 return (
                   <div key={i} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", padding: "14px 18px", borderBottom: "1px solid " + T.border, fontSize: 13, alignItems: "center" }}>
-                    <span style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ev.name}</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <span style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, background: T.bg, border: "1px solid " + T.border, display: "flex", alignItems: "center", justifyContent: "center", color: T.textDim }}>{Icon.Image(14)}</span>
+                      {ev.name}
+                    </span>
                     <span style={{ color: T.textMuted }}>{ev.sales}</span>
                     <span>{fcfa(ev.revenue)}</span>
                     <span style={{ color: T.green, fontWeight: 600 }}>{fcfa(net)}</span>
@@ -446,6 +479,27 @@ export default function EarningsTab({ token }) {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Dernières transactions (aperçu combiné ventes + retraits) */}
+      {recentActivity.length > 0 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ fontSize: 11, color: T.textMuted, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 }}>Dernières transactions</div>
+          <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, overflow: "hidden" }}>
+            {recentActivity.map((a, i) => (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: i < recentActivity.length - 1 ? "1px solid " + T.border : "none" }}>
+                <span style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                  {a.type === "withdrawal" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.gold, display: "inline-block", flexShrink: 0 }} />}
+                  {a.label}
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <span style={{ fontSize: 12, color: T.textMuted }}>{fdateShort(a.date)}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, fontFamily: T.fontNumber, color: a.amount >= 0 ? T.green : T.red }}>{a.amount >= 0 ? "+" : "-"}{fcfa(Math.abs(a.amount))}</span>
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
