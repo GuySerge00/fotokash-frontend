@@ -1,6 +1,5 @@
 .dashboard {
   position: relative;
-  max-width: 1100px;
 }
 
 .dashboard-header {
@@ -51,8 +50,9 @@
 }
 
 .period-btn.active {
-  background: rgba(232, 89, 60, 0.12);
-  color: #E8593C;
+  background: #E8593C;
+  color: #fff;
+  font-weight: 700;
 }
 
 .kpi-grid {
