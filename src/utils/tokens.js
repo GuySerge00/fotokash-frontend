@@ -19,10 +19,11 @@ export const T = {
   radiusSm: 10,
   font: "'DM Sans', system-ui, sans-serif",
   fontDisplay: "'Playfair Display', Georgia, serif",
+  fontNumber: "'Inter', system-ui, sans-serif",
 };
 
 export const globalCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
   @keyframes spin { to { transform: rotate(360deg); } }
   @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
