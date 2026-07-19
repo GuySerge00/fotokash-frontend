@@ -119,22 +119,26 @@
   background: #0a0a0f;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
-  padding: 8px 0 20px;
+  padding: 8px 2px 20px;
   z-index: 100;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  box-sizing: border-box;
+  width: 100%;
 }
 .admin-bottom-nav button {
   display: flex;
+  flex: 1;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   gap: 3px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 4px 0px;
   font-family: 'DM Sans', system-ui, sans-serif;
   position: relative;
 }
@@ -142,14 +146,22 @@
   color: #8b8b9e;
   transition: color 0.2s;
 }
+.admin-bottom-nav button .nav-icon svg {
+  width: 16px;
+  height: 16px;
+}
 .admin-bottom-nav button.active .nav-icon {
   color: #E8593C;
 }
 .admin-bottom-nav button .nav-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 500;
   color: #8b8b9e;
   transition: color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .admin-bottom-nav button.active .nav-label {
   font-weight: 700;

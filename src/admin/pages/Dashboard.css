@@ -236,7 +236,7 @@
   .kpi-icon { width: 30px; height: 30px; font-size: 14px; }
   .dashboard-bottom { grid-template-columns: 1fr; gap: 10px; }
   .chart-card, .sales-card { padding: 14px; }
-  .period-selector { flex-wrap: nowrap; }
-  position: relative;
-  .period-btn { padding: 6px 10px; font-size: 11px; }
+  .period-selector { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; scrollbar-width: none; }
+  .period-selector::-webkit-scrollbar { display: none; }
+  .period-btn { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
 }
