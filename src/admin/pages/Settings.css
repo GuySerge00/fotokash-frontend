@@ -2,25 +2,27 @@
 
 .settings-header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
 }
 
 .settings-title { font-size: 24px; font-weight: 600; color: #f0f0f5; margin: 0; }
 .settings-subtitle { font-size: 14px; color: #6b6b80; margin: 4px 0 0; }
 
-.save-all-btn {
-  padding: 10px 22px; border-radius: 10px; border: none; background: #E8593C;
-  color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
-  font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
-}
-
-.save-all-btn:hover { opacity: 0.9; }
-.save-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
 .saved-badge {
   font-size: 13px; font-weight: 600; color: #4ADE80; background: rgba(74,222,128,0.1);
   padding: 6px 14px; border-radius: 8px;
 }
+
+.settings-toc {
+  display: flex; gap: 8px; flex-wrap: wrap; position: sticky; top: 0; z-index: 50;
+  background: #0B0B0F; padding: 10px 0 18px;
+}
+.settings-toc-item {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  color: #8888A0; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 20px;
+  cursor: pointer; font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
+}
+.settings-toc-item:hover { border-color: #E8593C; color: #E8593C; }
 
 .settings-loading { text-align: center; padding: 40px; color: #6b6b80; }
 
@@ -28,7 +30,7 @@
 
 .settings-group {
   background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 14px; overflow: hidden;
+  border-radius: 14px; overflow: hidden; scroll-margin-top: 70px;
 }
 
 .group-header {
@@ -40,7 +42,7 @@
 .group-icon svg { width: 100%; height: 100%; }
 .group-title { font-size: 15px; font-weight: 600; color: #e0e0ec; margin: 0; }
 
-.group-fields { display: flex; flex-direction: column; }
+.group-fields { display: flex; flex-direction: column; padding: 6px 0; }
 
 .setting-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -52,27 +54,83 @@
 .setting-row:hover { background: rgba(255,255,255,0.02); }
 .setting-row.modified { background: rgba(232,89,60,0.04); }
 
-.setting-info { display: flex; flex-direction: column; gap: 2px; }
-.setting-key { font-size: 13px; font-weight: 500; color: #e0e0ec; }
-.setting-key-raw { font-size: 11px; color: #555568; font-family: monospace; }
+.setting-row-slider { padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.slider-labels { display: flex; justify-content: space-between; font-size: 11px; color: #6b6b80; margin-bottom: 6px; }
+.slider-value { color: #E8593C; font-weight: 700; font-size: 13px; }
+.setting-slider {
+  width: 100%; accent-color: #E8593C; cursor: pointer;
+}
 
+.setting-info { display: flex; align-items: center; gap: 2px; }
+.setting-key { font-size: 13px; font-weight: 500; color: #e0e0ec; display: flex; align-items: center; }
+
+.setting-input-wrap {
+  display: flex; align-items: center; gap: 8px; width: 180px;
+  background: #0B0B0F; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 0 12px;
+}
+.setting-input-unit { font-size: 12px; color: #6b6b80; flex-shrink: 0; }
 .setting-input {
-  width: 220px; padding: 8px 12px; background: #0B0B0F; border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px; color: #f0f0f5; font-size: 13px; outline: none; text-align: right;
+  flex: 1; min-width: 0; padding: 8px 0; background: transparent; border: none;
+  color: #f0f0f5; font-size: 13px; outline: none; text-align: right;
   font-family: 'DM Sans', system-ui, sans-serif;
 }
+.setting-input:focus-within { border-color: #E8593C; }
+.setting-input-wrap:focus-within { border-color: #E8593C; }
 
-.setting-input:focus { border-color: #E8593C; }
-
-.setting-toggle {
-  padding: 6px 14px; border-radius: 8px; border: none; font-size: 12px;
-  font-weight: 600; cursor: pointer; font-family: 'DM Sans', system-ui, sans-serif;
+.maintenance-alert {
+  display: flex; justify-content: space-between; align-items: center;
+  margin: 12px 22px; padding: 14px 16px; border-radius: 10px;
+  border: 1px solid rgba(239,68,68,0.35); background: rgba(239,68,68,0.06);
 }
+.maintenance-alert-left { display: flex; gap: 10px; align-items: flex-start; }
+.maintenance-alert-icon { color: #EF4444; flex-shrink: 0; margin-top: 1px; }
+.maintenance-alert-title { font-size: 13px; font-weight: 700; color: #f0f0f5; }
+.maintenance-alert-sub { font-size: 11px; color: #f28b8b; margin-top: 2px; }
 
-.setting-toggle.on { background: rgba(74,222,128,0.1); color: #4ADE80; }
-.setting-toggle.off { background: rgba(239,68,68,0.1); color: #ef4444; }
+.price-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; padding: 18px 22px; }
+.price-card {
+  background: #0B0B0F; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px;
+}
+.price-card.modified { border-color: #E8593C; background: rgba(232,89,60,0.04); }
+.price-card-label { font-size: 11px; color: #6b6b80; margin-bottom: 8px; }
+.price-card-input-row { display: flex; align-items: baseline; gap: 6px; margin-bottom: 6px; }
+.price-card-input {
+  background: transparent; border: none; outline: none; color: #f0f0f5;
+  font-size: 22px; font-weight: 700; width: 100px; font-family: 'DM Sans', system-ui, sans-serif;
+}
+.price-card-suffix { font-size: 14px; color: #8888A0; font-weight: 600; }
+.price-card-sub { font-size: 11px; color: #4ADE80; margin-bottom: 8px; }
+.price-card-raw { font-size: 10px; color: #555568; font-family: monospace; }
+
+.settings-save-bar {
+  position: fixed; left: 235px; right: 0; bottom: 0; z-index: 300;
+  background: #141419; border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 14px 28px; display: flex; justify-content: space-between; align-items: center;
+  box-shadow: 0 -8px 24px rgba(0,0,0,0.4);
+}
+.settings-save-bar-text { font-size: 13px; color: #FFB826; font-weight: 600; }
+
+.save-all-btn {
+  padding: 10px 22px; border-radius: 10px; border: none; background: #E8593C;
+  color: #fff; font-size: 13px; font-weight: 700; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif; transition: all 0.15s;
+}
+.save-all-btn:hover { opacity: 0.9; }
+.save-all-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.settings-cancel-btn {
+  padding: 10px 22px; border-radius: 10px; border: none; background: rgba(255,255,255,0.06);
+  color: #8888A0; font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+.settings-cancel-btn:hover { color: #f0f0f5; }
+
+@media (max-width: 900px) {
+  .settings-save-bar { left: 0; }
+}
 
 @media (max-width: 600px) {
   .setting-row { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .setting-input { width: 100%; text-align: left; }
+  .setting-input-wrap { width: 100%; }
+  .maintenance-alert { flex-direction: column; align-items: flex-start; gap: 12px; }
 }
