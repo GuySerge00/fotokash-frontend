@@ -8,7 +8,7 @@ const fdate = (d) => new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', m
 const Withdrawals = ({ token, showToast }) => {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending');
+  const [filter, setFilter] = useState('all');
   const [processing, setProcessing] = useState(null);
   const [noteModal, setNoteModal] = useState(null);
   const [adminNote, setAdminNote] = useState('');
@@ -106,11 +106,11 @@ const Withdrawals = ({ token, showToast }) => {
           { id: 'all', label: 'Tous' },
         ].map(f => (
           <button key={f.id} onClick={() => setFilter(f.id)} style={{
-            background: filter === f.id ? 'rgba(232,89,60,0.12)' : 'rgba(255,255,255,0.04)',
+            background: filter === f.id ? '#E8593C' : 'rgba(255,255,255,0.04)',
             border: '1px solid ' + (filter === f.id ? '#E8593C' : 'rgba(255,255,255,0.06)'),
             borderRadius: 8, padding: '7px 16px',
-            color: filter === f.id ? '#E8593C' : '#8888A0',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer'
+            color: filter === f.id ? '#fff' : '#8888A0',
+            fontSize: 13, fontWeight: filter === f.id ? 700 : 600, cursor: 'pointer'
           }}>{f.label}{f.id === 'pending' && pendingCount > 0 ? ' (' + pendingCount + ')' : ''}</button>
         ))}
       </div>
