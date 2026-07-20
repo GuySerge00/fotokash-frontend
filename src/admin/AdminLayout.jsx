@@ -89,15 +89,15 @@ const AdminLayout = ({ user, token, onNavigate, onLogout, initialPage }) => {
         {toasts.map(t => (
           <div key={t.id} style={{
             background: toastBg[t.type] || toastBg.info,
-            border: '1px solid ' + (toastColors[t.type] || toastColors.info),
+            border: 'none',
             borderRadius: 10, padding: '12px 18px',
             color: toastColors[t.type] || toastColors.info,
-            fontSize: 13, fontWeight: 600,
+            fontSize: 13, fontWeight: 700,
             maxWidth: 320, animation: 'fadeUp 0.25s ease',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <span>{t.type === 'success' ? '✓' : t.type === 'error' ? '✕' : 'ℹ'}</span>
-            <span style={{ color: '#F0F0F5', fontWeight: 400 }}>{t.message}</span>
+            <span>{t.message}</span>
           </div>
         ))}
       </div>
