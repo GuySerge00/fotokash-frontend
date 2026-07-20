@@ -35,7 +35,7 @@ export default function EventsDirectory({ onNavigate }) {
     return () => { clearTimeout(t); ctrl.abort(); };
   }, [search]);
 
-  const openEvent = (slug) => onNavigate("client", { slug });
+  const openEvent = (ev) => onNavigate(ev.is_live ? "live" : "client", { slug: ev.slug });
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : "";
 
   const daysSince = (d) => d ? (Date.now() - new Date(d).getTime()) / 86400000 : Infinity;
@@ -119,7 +119,7 @@ export default function EventsDirectory({ onNavigate }) {
 
         {!loading && featured && (
           <>
-            <div onClick={() => openEvent(featured.slug)} className="evd-featured"
+            <div onClick={() => openEvent(featured)} className="evd-featured"
                  style={{ cursor: "pointer", borderRadius: 18, overflow: "hidden",
                           border: `1px solid ${T.border}`, marginBottom: 14 }}>
               <div className="evd-cover-wrap" style={{ height: 280, position: "relative" }}>
@@ -150,7 +150,7 @@ export default function EventsDirectory({ onNavigate }) {
               </div>
             </div>
 
-            <div onClick={() => openEvent(featured.slug)} className="evd-cta"
+            <div onClick={() => openEvent(featured)} className="evd-cta"
                  style={{ background: T.accent, color: "#fff", padding: "18px 22px",
                           borderRadius: 14, cursor: "pointer", display: "flex",
                           alignItems: "center", justifyContent: "space-between",
@@ -169,7 +169,7 @@ export default function EventsDirectory({ onNavigate }) {
                         letterSpacing: "0.08em", margin: "0 0 14px" }}>Autres événements</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {rest.map(ev => (
-                <div key={ev.id} onClick={() => openEvent(ev.slug)} className="evd-card"
+                <div key={ev.id} onClick={() => openEvent(ev)} className="evd-card"
                      style={{ display: "flex", alignItems: "center", gap: 14, padding: 14,
                               border: `0.5px solid ${T.border}`, borderRadius: 14, cursor: "pointer" }}>
                   <div style={{ width: 56, height: 56, borderRadius: 12, flexShrink: 0,
