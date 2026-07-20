@@ -69,7 +69,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
   // Nouvelles features
   const [lightboxPhoto, setLightboxPhoto] = useState(null); // photo en plein écran
   const [paymentSuccess, setPaymentSuccess] = useState(false); // écran succès
-  const [unlockedPhotos, setUnlockedPhotos] = useState({ transactionId: null, photoIds: [] });
+  const [unlockedPhotos, setUnlockedPhotos] = useState({});
   const [downloadingAll, setDownloadingAll] = useState(false);
   const [showPricingInfo, setShowPricingInfo] = useState(false); // tarifs dégressifs
   const notifTimerRef = useRef(null);
@@ -146,6 +146,13 @@ export default function LiveEventPage({ slug, onNavigate }) {
           }
           setMatches(incoming);
           setLastRefresh(new Date());
+          setUnlockedPhotos(function(prev) {
+            var next = Object.assign({}, prev);
+            incoming.forEach(function(m) {
+              if (m.purchased && m.transaction_id) next[m.id] = m.transaction_id;
+            });
+            return next;
+          });
         }
       })
       .catch(() => {})
@@ -197,6 +204,13 @@ export default function LiveEventPage({ slug, onNavigate }) {
         setMatches(data.matches || []);
         setVisitorId(data.visitor_id);
         setLastRefresh(new Date());
+        setUnlockedPhotos(function(prev) {
+          var next = Object.assign({}, prev);
+          (data.matches || []).forEach(function(m) {
+            if (m.purchased && m.transaction_id) next[m.id] = m.transaction_id;
+          });
+          return next;
+        });
         stopCamera();
       } else {
         alert(data.error || "Aucun visage detecte.");
@@ -314,19 +328,24 @@ export default function LiveEventPage({ slug, onNavigate }) {
     setPaymentTx(null);
     setSelectedPhotos([]);
     if (tx && tx.photos_purchased) {
-      setUnlockedPhotos({ transactionId: tx.id, photoIds: tx.photos_purchased });
+      setUnlockedPhotos(function(prev) {
+        var next = Object.assign({}, prev);
+        tx.photos_purchased.forEach(function(id) { next[id] = tx.id; });
+        return next;
+      });
     }
     setPaymentSuccess(true); // ecran succes plein ecran existant
   };
 
   const handleDownloadAllPurchased = async () => {
-    if (!unlockedPhotos.transactionId || unlockedPhotos.photoIds.length === 0) return;
+    const purchasedIds = Object.keys(unlockedPhotos);
+    if (purchasedIds.length === 0) return;
     setDownloadingAll(true);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
     try {
-      for (const photoId of unlockedPhotos.photoIds) {
+      for (const photoId of purchasedIds) {
         try {
-          const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + unlockedPhotos.transactionId);
+          const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + unlockedPhotos[photoId]);
           const data = await res.json();
           if (!res.ok || !data.download_url) continue;
           const blob = await fetch(data.download_url).then((r) => r.blob());
@@ -416,6 +435,10 @@ export default function LiveEventPage({ slug, onNavigate }) {
           0% { box-shadow: 0 0 0 0 rgba(232,89,60,0.7); }
           70% { box-shadow: 0 0 0 10px rgba(232,89,60,0); }
           100% { box-shadow: 0 0 0 0 rgba(232,89,60,0); }
+        }
+        @keyframes pingRing {
+          0% { transform: scale(0.9); opacity: 0.6; }
+          100% { transform: scale(1.5); opacity: 0; }
         }
       `}</style>
 
@@ -547,18 +570,22 @@ export default function LiveEventPage({ slug, onNavigate }) {
           <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "32px 20px", textAlign: "center", marginBottom: 20 }}>
             <h2 style={{ fontFamily: T.fontDisplay, fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Retrouvez vos photos</h2>
             <p style={{ color: T.textMuted, fontSize: 13, marginBottom: 24 }}>Prenez un selfie pour trouver toutes les photos ou vous apparaissez</p>
-            <div style={{ width: 120, height: 120, borderRadius: "50%", border: "3px dashed " + T.accent, margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M6 21v-1a6 6 0 0112 0v1"/></svg>
+            <div style={{ position: "relative", width: 120, height: 120, margin: "0 auto 36px" }}>
+              <div style={{ position: "absolute", inset: 0, borderRadius: "50%", border: "2px solid " + T.accent, animation: "pingRing 1.8s ease-out infinite" }} />
+              <div style={{ position: "absolute", inset: 10, borderRadius: "50%", border: "2px solid " + T.accent, animation: "pingRing 1.8s ease-out infinite 0.6s" }} />
+              <div style={{ position: "relative", width: 120, height: 120, borderRadius: "50%", border: "3px dashed " + T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={T.accent} strokeWidth="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
             </div>
             <button onClick={startCamera} style={{ background: T.accent, color: "#fff", border: "none", padding: "14px 32px", borderRadius: T.radiusSm, fontSize: 15, fontWeight: 600, cursor: "pointer", width: "100%", fontFamily: T.font }}>
               Prendre un selfie
             </button>
             <p style={{ color: T.textDim, fontSize: 11, marginTop: 10 }}>Ton selfie est utilise uniquement pour retrouver tes photos et est supprime immediatement.</p>
             {event.is_live && (
-              <p style={{ color: T.textDim, fontSize: 11, marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.green, animation: "pulse 1.5s infinite", display: "inline-block" }}></span>
-                Actualisation auto toutes les 10s
-              </p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 14 }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: T.green, animation: "pulse 1.5s infinite", display: "inline-block" }}></span>
+                <span style={{ color: T.green, fontSize: 12, fontWeight: 600 }}>Recherche active — actualisation toutes les 10s</span>
+              </div>
             )}
           </div>
         )}
@@ -641,6 +668,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
               {matches.map((m) => {
                 const isNew = newPhotoIds.has(m.id);
                 const isSelected = selectedPhotos.includes(m.id);
+                const isPurchased = !!unlockedPhotos[m.id];
                 return (
                   <div
                     key={m.id}
@@ -648,7 +676,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
                     style={{
                       position: "relative", borderRadius: T.radiusSm, overflow: "hidden",
                       cursor: "pointer", aspectRatio: "1",
-                      border: "2px solid " + (isSelected ? T.accent : isNew ? T.green : "transparent"),
+                      border: "2px solid " + (isPurchased ? T.green : isSelected ? T.accent : isNew ? T.green : "transparent"),
                       animation: isNew ? "photoNewPulse 0.8s ease 3" : "none",
                       transition: "border-color 0.2s",
                     }}
@@ -665,7 +693,13 @@ export default function LiveEventPage({ slug, onNavigate }) {
                         WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none",
                       }}
                     />
-                    {isNew && (
+                    {isPurchased && (
+                      <div style={{ position: "absolute", top: 4, left: 4, background: T.green, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6, display: "flex", alignItems: "center", gap: 3 }}>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                        ACHETE
+                      </div>
+                    )}
+                    {isNew && !isPurchased && (
                       <div style={{ position: "absolute", top: 4, left: 4, background: T.green, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>NOUVEAU</div>
                     )}
                     {isSelected && (
@@ -685,6 +719,11 @@ export default function LiveEventPage({ slug, onNavigate }) {
               })}
             </div>
 
+            {Object.keys(unlockedPhotos).length > 0 && (
+              <button onClick={handleDownloadAllPurchased} disabled={downloadingAll} style={{ width: "100%", padding: "13px", borderRadius: T.radiusSm, background: T.accent, border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: downloadingAll ? "default" : "pointer", fontFamily: T.font, marginBottom: 10, opacity: downloadingAll ? 0.7 : 1 }}>
+                {downloadingAll ? "Telechargement..." : `Telecharger mes photos achetees (${Object.keys(unlockedPhotos).length})`}
+              </button>
+            )}
             <button onClick={startCamera} style={{ width: "100%", padding: "10px", borderRadius: T.radiusSm, background: T.cardAlt, border: "1px solid " + T.border, color: T.textMuted, fontSize: 13, cursor: "pointer", fontFamily: T.font, marginBottom: 20 }}>
               Reprendre un selfie
             </button>
@@ -726,7 +765,7 @@ export default function LiveEventPage({ slug, onNavigate }) {
         {/* Contact photographe */}
         {event.photographer_phone && (
           <div style={{ textAlign: "center", marginTop: 20, marginBottom: 80 }}>
-            <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: T.textMuted, fontSize: 12, textDecoration: "underline" }}>
+            <a href={"https://wa.me/" + event.photographer_phone.replace(/[^0-9]/g, "")} target="_blank" rel="noopener noreferrer" style={{ color: T.accent, fontSize: 12, fontWeight: 600, textDecoration: "underline" }}>
               Contacter le photographe via WhatsApp
             </a>
             <p style={{ color: T.textDim, fontSize: 11, marginTop: 8, maxWidth: 400, margin: "8px auto 0" }}>Si vous souhaitez que votre image soit retiree de cette galerie, contactez rapidement le photographe.</p>
