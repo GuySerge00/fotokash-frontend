@@ -21,7 +21,7 @@ const [selfieLoading, setSelfieLoading] = useState(false);
   const canvasRef = useRef(null);
   const paymentPopupRef = useRef(null);
   const [paymentTx, setPaymentTx] = useState(null);
-  const [unlockedPhotos, setUnlockedPhotos] = useState({ transactionId: null, photoIds: [] });
+  const [unlockedPhotos, setUnlockedPhotos] = useState({});
   const [showOwnerModal, setShowOwnerModal] = useState(false);
   const [ownerPin, setOwnerPin] = useState("");
   const [ownerMode, setOwnerMode] = useState(false);
@@ -64,6 +64,13 @@ const [selfieLoading, setSelfieLoading] = useState(false);
         if (res.ok && data.matched_photos && data.matched_photos.length > 0) {
           setMatchedIds(data.matched_photos.map(function(p) { return p.id; }));
           setMatchedPhotos(data.count);
+          setUnlockedPhotos(function(prev) {
+            var next = Object.assign({}, prev);
+            data.matched_photos.forEach(function(p) {
+              if (p.purchased && p.transaction_id) next[p.id] = p.transaction_id;
+            });
+            return next;
+          });
         } else {
           alert(data.error || "Aucune photo trouvée avec votre visage. Essayez avec un meilleur éclairage.");
         }
@@ -227,15 +234,20 @@ const [paymentLoading, setPaymentLoading] = useState(false);
         .catch(() => {});
     }
     if (tx && tx.photos_purchased) {
-      setUnlockedPhotos({ transactionId: tx.id, photoIds: tx.photos_purchased });
+      setUnlockedPhotos(function(prev) {
+        var next = Object.assign({}, prev);
+        tx.photos_purchased.forEach(function(id) { next[id] = tx.id; });
+        return next;
+      });
     }
     setSelectedPhotos([]);
   };
 
   const handleDownloadPhoto = async (photoId) => {
-    if (!unlockedPhotos.transactionId) return;
+    const txId = unlockedPhotos[photoId];
+    if (!txId) return;
     try {
-      const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + unlockedPhotos.transactionId);
+      const res = await fetch(API + "/photos/" + photoId + "/download?transaction_id=" + txId);
       const data = await res.json();
       if (!res.ok || !data.download_url) {
         alert(data.error || "Telechargement impossible.");
@@ -786,7 +798,7 @@ const handleFreeDownload = async () => {
                           color: "#fff", cursor: "pointer", fontSize: 12,
                         }}>{Icon.QrCode(14)}</div>
                       )}
-                      {unlockedPhotos.photoIds.includes(p.id) && (
+                      {unlockedPhotos[p.id] && (
                         <div onClick={(ev) => {
                           ev.stopPropagation();
                           handleDownloadPhoto(p.id);
