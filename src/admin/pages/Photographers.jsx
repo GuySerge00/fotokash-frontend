@@ -576,6 +576,15 @@ const Photographers = ({ token, showToast }) => {
                   <div style={{ fontSize:10, color:'#8888A0', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>Inscrit le</div>
                   <div style={{ fontSize:16, fontWeight:700, color:'#f0f0f5' }}>{formatDate(detail.photographer.createdAt)}</div>
                 </div>
+                <div style={{ background:'rgba(255,255,255,0.03)', borderRadius:12, padding:'14px 16px' }}>
+                  <div style={{ fontSize:10, color:'#8888A0', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>Tarification par défaut</div>
+                  <div style={{ fontSize:16, fontWeight:700, color:'#f0f0f5', textTransform:'capitalize' }}>
+                    {{ free: 'Gratuit', fixed: 'Prix fixe', degressive: 'Dégressif', tiers: 'Paliers' }[detail.photographer.defaultPricingMode] || detail.photographer.defaultPricingMode}
+                  </div>
+                  {detail.photographer.defaultUnitPrice != null && (
+                    <div style={{ fontSize:11, color:'#8888A0', marginTop:2 }}>{detail.photographer.defaultUnitPrice} F de base</div>
+                  )}
+                </div>
               </div>
 
               {/* Events list */}
@@ -587,7 +596,14 @@ const Photographers = ({ token, showToast }) => {
                       <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, minWidth:0 }}>
                         <span style={{ width:34, height:34, borderRadius:8, background:'#0B0B0F', border:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'center', color:'#555568', flexShrink:0 }}>{IconImage(15)}</span>
                         <div style={{ minWidth:0 }}>
-                          <span className="detail-event-name" style={{ display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{e.name}</span>
+                          <span className="detail-event-name" style={{ display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            {e.name}
+                            {e.pricingMode && (
+                              <span style={{ marginLeft:8, fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:20, background:'rgba(245,158,11,0.15)', color:'#f59e0b', textTransform:'uppercase', letterSpacing:0.3 }}>
+                                {{ free: 'Gratuit', fixed: 'Prix fixe', degressive: 'Dégressif' }[e.pricingMode] || e.pricingMode}{e.unitPrice != null ? ' · ' + e.unitPrice + ' F' : ''}
+                              </span>
+                            )}
+                          </span>
                           <span className="detail-event-date">{e.date ? formatDate(e.date) : '—'} · {e.photoCount} photos</span>
                         </div>
                       </div>
