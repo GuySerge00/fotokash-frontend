@@ -14,6 +14,11 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
   const [pricingMode, setPricingMode] = useState("default");
   const [pricingUnit, setPricingUnit] = useState(200);
   const [pricingPreview, setPricingPreview] = useState(null);
+  const [editPricingId, setEditPricingId] = useState(null);
+  const [editPricingMode, setEditPricingMode] = useState("default");
+  const [editPricingUnit, setEditPricingUnit] = useState(200);
+  const [editPricingPreview, setEditPricingPreview] = useState(null);
+  const [savingEditPricing, setSavingEditPricing] = useState(false);
   const [creating, setCreating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
@@ -33,6 +38,51 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
     }, 300);
     return function() { clearTimeout(t); };
   }, [pricingMode, pricingUnit, token]);
+
+  useEffect(() => {
+    if (editPricingMode === "default" || editPricingMode === "free") { 
+      if (editPricingMode === "free") {
+        fetch(API + "/auth/pricing/preview?mode=free", { headers: { Authorization: "Bearer " + token } })
+          .then(r => r.json()).then(d => setEditPricingPreview(d)).catch(() => {});
+      } else {
+        setEditPricingPreview(null);
+      }
+      return;
+    }
+    var qs = "mode=" + editPricingMode + "&unit_price=" + editPricingUnit;
+    var t = setTimeout(function() {
+      fetch(API + "/auth/pricing/preview?" + qs, { headers: { Authorization: "Bearer " + token } })
+        .then(r => r.json()).then(d => setEditPricingPreview(d)).catch(() => {});
+    }, 300);
+    return function() { clearTimeout(t); };
+  }, [editPricingMode, editPricingUnit, token]);
+
+  const openPricingEdit = (e) => {
+    setEditPricingId(e.id);
+    setEditPricingMode(e.pricing_mode || "default");
+    setEditPricingUnit(e.unit_price || 200);
+    setMenuOpen(null);
+  };
+
+  const saveEditPricing = async (e) => {
+    setSavingEditPricing(true);
+    try {
+      const body = editPricingMode === "default"
+        ? { clear_pricing_override: true }
+        : { pricing_mode: editPricingMode, unit_price: editPricingMode === "free" ? null : editPricingUnit };
+      const res = await fetch(API + "/events/" + e.id, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok && data.event) {
+        setEvents((prev) => prev.map((x) => x.id === e.id ? { ...x, pricing_mode: data.event.pricing_mode, unit_price: data.event.unit_price } : x));
+        setEditPricingId(null);
+      }
+    } catch {}
+    setSavingEditPricing(false);
+  };
 
   const createEvent = async () => {
     if (!form.name.trim()) return;
@@ -247,6 +297,7 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
                         { icon: copiedId === e.id ? Icon.Check(14) : Icon.Link(14), label: copiedId === e.id ? "Lien copié !" : "Copier le lien", action: () => copyLink(e) },
                         { icon: copiedPin === e.id ? Icon.Check(14) : Icon.Key(14), label: copiedPin === e.id ? "Code copié !" : "Code propriétaire" + (e.owner_pin ? " : " + e.owner_pin : ""), action: () => { if (e.owner_pin) { navigator.clipboard.writeText(e.owner_pin).then(() => { setCopiedPin(e.id); setTimeout(() => setCopiedPin(null), 2000); }); } setMenuOpen(null); } },
                         { icon: Icon.ExternalLink(14), label: "Voir la page", action: () => { window.open("https://fotokash.com/e/" + e.slug, "_blank"); setMenuOpen(null); } },
+                        { icon: (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M14.5 9.5a2.5 2.5 0 0 0-2.5-1.5h-1a2 2 0 0 0 0 4h2a2 2 0 0 1 0 4h-1a2.5 2.5 0 0 1-2.5-1.5"/><line x1="12" y1="6" x2="12" y2="8"/><line x1="12" y1="16" x2="12" y2="18"/></svg>), label: "Modifier la tarification", action: () => openPricingEdit(e) },
                         { icon: Icon.Edit(14), label: "Renommer", action: () => startRename(e) },
                         { icon: Icon.Trash(14), label: "Supprimer", action: () => { setDeleteTarget(e); setMenuOpen(null); }, red: true },
                       ].map((item, i) => (
@@ -259,6 +310,47 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
                   </div>
                 </div>
               </div>
+
+              {editPricingId === e.id && (
+                <div style={{ background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: 16, marginBottom: 14 }} onClick={(ev) => ev.stopPropagation()}>
+                  <div style={{ fontSize: 12, color: T.textMuted, marginBottom: 10 }}>Tarification de cet événement</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: editPricingMode !== "default" ? 12 : 0 }}>
+                    {[
+                      { value: "default", label: "Par défaut" },
+                      { value: "free", label: "Gratuit" },
+                      { value: "degressive", label: "Dégressif" },
+                      { value: "fixed", label: "Prix fixe" },
+                    ].map((opt) => (
+                      <button key={opt.value} type="button" onClick={() => setEditPricingMode(opt.value)} style={{
+                        padding: "10px 8px", borderRadius: T.radiusSm, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: T.font,
+                        border: "1px solid " + (editPricingMode === opt.value ? T.accent : T.border),
+                        background: editPricingMode === opt.value ? "rgba(245,158,11,0.10)" : T.cardAlt,
+                        color: editPricingMode === opt.value ? T.accent : T.textMuted,
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+
+                  {editPricingMode !== "default" && editPricingMode !== "free" && (
+                    <input type="number" min={editPricingPreview?.minBase || 100} step={25} value={editPricingUnit}
+                      onChange={(ev) => setEditPricingUnit(parseInt(ev.target.value, 10) || 0)}
+                      placeholder="Prix unitaire (FCFA)"
+                      style={{ width: "100%", background: T.cardAlt, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 12 }} />
+                  )}
+
+                  {editPricingPreview && (
+                    <div style={{ background: T.cardAlt, borderRadius: T.radiusSm, padding: "10px 14px", display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{editPricingPreview.price1}</strong> F · 1 photo</span>
+                      <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{editPricingPreview.price3}</strong> F · 3 photos</span>
+                      <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{editPricingPreview.price5}</strong> F · 5+ photos</span>
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                    <Btn variant="ghost" onClick={() => setEditPricingId(null)}>Annuler</Btn>
+                    <Btn onClick={() => saveEditPricing(e)} disabled={savingEditPricing}>{savingEditPricing ? "Enregistrement..." : "Enregistrer"}</Btn>
+                  </div>
+                </div>
+              )}
 
               {/* Stats : photos / vendues / revenus */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
