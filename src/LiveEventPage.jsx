@@ -110,9 +110,12 @@ export default function LiveEventPage({ slug, onNavigate }) {
         setEvent(evt);
         if (evt) setMobileMoneyEnabled(evt.mobile_money_enabled || false);
         setLoading(false);
+        if (evt && evt.id) {
+          fetch(API + "/photos/pricing?event_id=" + evt.id)
+            .then(r => r.json()).then(d => setPricing(d)).catch(() => {});
+        }
       })
       .catch(() => setLoading(false));
-    fetch(API + "/photos/pricing").then(r => r.json()).then(d => setPricing(d)).catch(() => {});
   }, [slug]);
 
   useEffect(() => { matchesRef.current = matches; }, [matches]);

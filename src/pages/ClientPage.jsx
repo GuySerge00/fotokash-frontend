@@ -147,12 +147,13 @@ useEffect(() => {
             .then((d2) => { setPhotos(d2.photos || []); })
             .catch(() => {})
             .finally(() => setLoading(false));
+          fetch(API + "/photos/pricing?event_id=" + evt.id)
+            .then(r => r.json()).then(d => setPricing(d)).catch(() => {});
         } else {
           setLoading(false);
         }
       })
       .catch(() => { setNotFound(true); setLoading(false); });
-   fetch(API + "/photos/pricing").then(r => r.json()).then(d => setPricing(d)).catch(() => {});
   }, [slug]);
 
   const togglePhoto = (id) => {
