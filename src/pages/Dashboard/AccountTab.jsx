@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { T, API } from "../../utils/tokens";
 import { Icon } from "../../utils/icons";
 
@@ -18,6 +18,11 @@ export default function AccountTab({ token, user, onUserUpdate }) {
   const [formPhone, setFormPhone] = useState(user?.phone || "");
   const [profileMsg, setProfileMsg] = useState({ text: "", color: T.textMuted });
   const [savingProfile, setSavingProfile] = useState(false);
+  const [pricingMode, setPricingMode] = useState(user?.default_pricing_mode || "degressive");
+  const [pricingUnit, setPricingUnit] = useState(user?.default_unit_price || 200);
+  const [pricingPreview, setPricingPreview] = useState(null);
+  const [savingPricing, setSavingPricing] = useState(false);
+  const [pricingMsg, setPricingMsg] = useState({ text: "", color: T.textMuted });
 
   const validate = () => {
     if (!currentPwd || !newPwd || !confirmPwd) { setMsg({ text: "Remplissez tous les champs.", color: T.red }); return false; }
@@ -71,6 +76,43 @@ export default function AccountTab({ token, user, onUserUpdate }) {
     return score;
   };
   const strength = pwdStrength(newPwd);
+
+  useEffect(() => {
+    var qs = "mode=" + pricingMode + (pricingMode !== "free" ? "&unit_price=" + pricingUnit : "");
+    var t = setTimeout(function() {
+      fetch(API + "/auth/pricing/preview?" + qs, { headers: { Authorization: "Bearer " + token } })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { setPricingPreview(d); })
+        .catch(function() {});
+    }, 300);
+    return function() { clearTimeout(t); };
+  }, [pricingMode, pricingUnit, token]);
+
+  const handleSavePricing = async () => {
+    setSavingPricing(true);
+    setPricingMsg({ text: "Enregistrement...", color: T.textMuted });
+    try {
+      const res = await fetch(API + "/auth/pricing", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({
+          default_pricing_mode: pricingMode,
+          default_unit_price: pricingMode === "free" ? null : pricingUnit,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPricingMsg({ text: "✓ Tarification mise à jour !", color: T.green });
+        if (onUserUpdate) onUserUpdate((prev) => ({ ...prev, ...data.user }));
+      } else {
+        setPricingMsg({ text: data.error || "Erreur", color: T.red });
+      }
+    } catch {
+      setPricingMsg({ text: "Erreur de connexion.", color: T.red });
+    } finally {
+      setSavingPricing(false);
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!formName.trim() || !formEmail.trim()) {
@@ -131,6 +173,59 @@ export default function AccountTab({ token, user, onUserUpdate }) {
             textTransform: "uppercase", letterSpacing: 1,
           }}>Plan {plan}</span>
         )}
+      </div>
+
+      {/* Tarification */}
+      <div style={{ background: T.card, borderRadius: T.radius, border: "1px solid " + T.border, padding: "24px 22px", marginBottom: 20 }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 6 }}>Tarification de vos photos</h3>
+        <p style={{ fontSize: 12, color: T.textMuted, marginBottom: 20 }}>Ce reglage s'applique par defaut a vos nouveaux evenements. Vous pourrez le personnaliser pour un evenement precis.</p>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 18 }}>
+          {[
+            { value: "free", label: "Gratuit", desc: "Vos invites telechargent sans payer" },
+            { value: "degressive", label: "Degressif", desc: "Prix par palier, comme FotoKash" },
+            { value: "fixed", label: "Prix fixe", desc: "Meme prix quel que soit le nombre" },
+          ].map((opt) => (
+            <button key={opt.value} type="button" onClick={() => setPricingMode(opt.value)} style={{
+              textAlign: "left", padding: "14px 14px", borderRadius: T.radiusSm, cursor: "pointer",
+              border: "1px solid " + (pricingMode === opt.value ? T.accent : T.border),
+              background: pricingMode === opt.value ? "rgba(245,158,11,0.10)" : T.bg,
+              fontFamily: T.font,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: pricingMode === opt.value ? T.accent : T.text, marginBottom: 3 }}>{opt.label}</div>
+              <div style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.4 }}>{opt.desc}</div>
+            </button>
+          ))}
+        </div>
+
+        {pricingMode !== "free" && (
+          <div style={{ marginBottom: 18 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 6 }}>
+              {pricingMode === "fixed" ? "Prix unitaire par photo (FCFA)" : "Prix de base (FCFA) — ajuste l'echelle des paliers"}
+            </label>
+            <input type="number" min={pricingPreview?.minBase || 100} step={25} value={pricingUnit}
+              onChange={(e) => setPricingUnit(parseInt(e.target.value, 10) || 0)}
+              style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "12px 16px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+          </div>
+        )}
+
+        <div style={{ background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "14px 16px", marginBottom: 18 }}>
+          <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.5 }}>Apercu pour vos invites</div>
+          {pricingPreview ? (
+            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
+              <div><span style={{ fontSize: 18, fontWeight: 700, color: T.accent }}>{pricingPreview.price1}</span><span style={{ fontSize: 11, color: T.textMuted }}> FCFA · 1 photo</span></div>
+              <div><span style={{ fontSize: 18, fontWeight: 700, color: T.accent }}>{pricingPreview.price3}</span><span style={{ fontSize: 11, color: T.textMuted }}> FCFA · 3 photos</span></div>
+              <div><span style={{ fontSize: 18, fontWeight: 700, color: T.accent }}>{pricingPreview.price5}</span><span style={{ fontSize: 11, color: T.textMuted }}> FCFA · 5 photos et +</span></div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: T.textMuted }}>Calcul en cours...</div>
+          )}
+        </div>
+
+        {pricingMsg.text && <p style={{ fontSize: 13, marginBottom: 16, color: pricingMsg.color, minHeight: 20 }}>{pricingMsg.text}</p>}
+        <button onClick={handleSavePricing} disabled={savingPricing} style={{ background: T.accent, color: "#fff", border: "none", borderRadius: T.radiusSm, padding: "12px 24px", fontSize: 14, fontWeight: 700, cursor: savingPricing ? "not-allowed" : "pointer", opacity: savingPricing ? 0.7 : 1, fontFamily: T.font }}>
+          {savingPricing ? "Enregistrement..." : "Enregistrer la tarification"}
+        </button>
       </div>
 
       {/* Infos + mot de passe */}
