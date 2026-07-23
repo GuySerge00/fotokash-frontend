@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { T, API } from "../../utils/tokens";
 import { Icon } from "../../utils/icons";
 import { Btn } from "../../components/Btn";
@@ -11,6 +11,9 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
   const [showForm, setShowForm] = useState(false);
   const [viewingEvent, setViewingEvent] = useState(null);
   const [form, setForm] = useState({ name: "", date: today, location: "", description: "" });
+  const [pricingMode, setPricingMode] = useState("default");
+  const [pricingUnit, setPricingUnit] = useState(200);
+  const [pricingPreview, setPricingPreview] = useState(null);
   const [creating, setCreating] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const [renamingId, setRenamingId] = useState(null);
@@ -19,6 +22,18 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
   const [copiedId, setCopiedId] = useState(null);
   const [copiedPin, setCopiedPin] = useState(null);
 
+  useEffect(() => {
+    if (pricingMode === "default") { setPricingPreview(null); return; }
+    var qs = "mode=" + pricingMode + (pricingMode !== "free" ? "&unit_price=" + pricingUnit : "");
+    var t = setTimeout(function() {
+      fetch(API + "/auth/pricing/preview?" + qs, { headers: { Authorization: "Bearer " + token } })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { setPricingPreview(d); })
+        .catch(function() {});
+    }, 300);
+    return function() { clearTimeout(t); };
+  }, [pricingMode, pricingUnit, token]);
+
   const createEvent = async () => {
     if (!form.name.trim()) return;
     setCreating(true);
@@ -26,12 +41,18 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
       const res = await fetch(API + "/events", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          pricing_mode: pricingMode === "default" ? null : pricingMode,
+          unit_price: (pricingMode !== "default" && pricingMode !== "free") ? pricingUnit : null,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
         setEvents((prev) => [data.event || data, ...prev]);
         setForm({ name: "", date: today, location: "", description: "" });
+        setPricingMode("default");
+        setPricingUnit(200);
         setShowForm(false);
       }
     } catch {}
@@ -126,6 +147,41 @@ export default function EventsTab({ token, events, setEvents, loading, onNavigat
             <Input label="Lieu" placeholder="Abidjan, Cocody" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
           </div>
           <Input label="Description (optionnel)" placeholder="Quelques détails..." value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+
+          <div style={{ marginTop: 4, marginBottom: 16 }}>
+            <label style={{ display: "block", fontSize: 12, color: T.textMuted, marginBottom: 8 }}>Tarification pour cet événement</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: pricingMode !== "default" ? 12 : 0 }}>
+              {[
+                { value: "default", label: "Par défaut" },
+                { value: "free", label: "Gratuit" },
+                { value: "degressive", label: "Dégressif" },
+                { value: "fixed", label: "Prix fixe" },
+              ].map((opt) => (
+                <button key={opt.value} type="button" onClick={() => setPricingMode(opt.value)} style={{
+                  padding: "10px 8px", borderRadius: T.radiusSm, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: T.font,
+                  border: "1px solid " + (pricingMode === opt.value ? T.accent : T.border),
+                  background: pricingMode === opt.value ? "rgba(245,158,11,0.10)" : T.bg,
+                  color: pricingMode === opt.value ? T.accent : T.textMuted,
+                }}>{opt.label}</button>
+              ))}
+            </div>
+
+            {pricingMode !== "default" && pricingMode !== "free" && (
+              <input type="number" min={pricingPreview?.minBase || 100} step={25} value={pricingUnit}
+                onChange={(e) => setPricingUnit(parseInt(e.target.value, 10) || 0)}
+                placeholder="Prix unitaire (FCFA)"
+                style={{ width: "100%", background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "10px 14px", color: T.text, fontSize: 14, outline: "none", boxSizing: "border-box", marginBottom: 12 }} />
+            )}
+
+            {pricingPreview && (
+              <div style={{ background: T.bg, border: "1px solid " + T.border, borderRadius: T.radiusSm, padding: "10px 14px", display: "flex", gap: 16, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{pricingPreview.price1}</strong> F · 1 photo</span>
+                <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{pricingPreview.price3}</strong> F · 3 photos</span>
+                <span style={{ fontSize: 12, color: T.textMuted }}><strong style={{ color: T.accent }}>{pricingPreview.price5}</strong> F · 5+ photos</span>
+              </div>
+            )}
+          </div>
+
           <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
             <Btn variant="ghost" onClick={() => setShowForm(false)}>Annuler</Btn>
             <Btn onClick={createEvent} disabled={!form.name.trim() || creating}>{creating ? "Création..." : "Créer"}</Btn>
