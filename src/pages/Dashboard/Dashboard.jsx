@@ -6,6 +6,7 @@ import PhotosTab from "./PhotosTab";
 import LiveTab from "./LiveTab";
 import EventsTab from "./EventsTab";
 import AccountTab from "./AccountTab";
+import SubscriptionTab from "./SubscriptionTab";
 import EarningsTab from "./EarningsTab";
 import OnboardingTour from "../../components/OnboardingTour";
 
@@ -53,7 +54,8 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
     { id: "photos",  label: "Photos",      icon: Icon.Image(16) },
     { id: "events",  label: "Événements",  icon: Icon.Calendar(16) },
     { id: "live",    label: "Live",        icon: Icon.Phone(16), badge: liveCount },
-    { id: "earnings", label: "Revenus",    icon: Icon.CreditCard(16) },
+    { id: "earnings", label: "Revenus",    icon: Icon.Coins(16) },
+    { id: "subscription", label: "Abonnement", icon: Icon.CreditCard(16) },
     { id: "account", label: "Compte",      icon: Icon.Users(16) },
   ];
 
@@ -155,6 +157,7 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
         {tab === "live"    && <LiveTab token={token} events={events} onNavigate={onNavigate} setEvents={setEvents} />}
         {tab === "events"  && <EventsTab token={token} events={events} setEvents={setEvents} loading={loadingEvents} onNavigate={onNavigate} />}
         {tab === "earnings" && <EarningsTab token={token} />}
+        {tab === "subscription" && <SubscriptionTab token={token} user={user} onUserUpdate={setUser} />}
         {tab === "account" && <AccountTab token={token} user={user} onUserUpdate={setUser} />}
       </div>
       {/* BOTTOM NAV MOBILE */}
