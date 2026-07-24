@@ -3,7 +3,9 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 const POLL_INTERVAL_MS = 3000;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-export default function PaymentStatusModal({ transactionId, amount, onSuccess, onError, onCancel }) {
+export default function PaymentStatusModal({ transactionId, amount, onSuccess, onError, onCancel, statusUrl, dataKey }) {
+  const url = statusUrl || ('/api/payments/' + transactionId + '/status');
+  const key = dataKey || 'transaction';
   const [status, setStatus] = useState('waiting'); // waiting | completed | failed | timeout
   const [message, setMessage] = useState("En attente de confirmation du paiement...");
 
@@ -35,10 +37,10 @@ export default function PaymentStatusModal({ transactionId, amount, onSuccess, o
         return;
       }
       try {
-        const res = await fetch('/api/payments/' + transactionId + '/status');
+        const res = await fetch(url);
         if (!res.ok) return;
         const data = await res.json();
-        const tx = data.transaction;
+        const tx = data[key];
 
         if (tx.status === 'completed') {
           stopPolling();
