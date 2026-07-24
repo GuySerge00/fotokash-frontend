@@ -9,13 +9,14 @@ import AccountTab from "./AccountTab";
 import SubscriptionTab from "./SubscriptionTab";
 import EarningsTab from "./EarningsTab";
 import OnboardingTour from "../../components/OnboardingTour";
+import ForcePasswordChangeModal from "../../components/ForcePasswordChangeModal";
 
 
 export default function Dashboard({ user: initialUser, token, onNavigate, onLogout, initialTab }) {
   const [user, setUser] = useState(initialUser);
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
-    if (user && !user.has_seen_onboarding) setShowTour(true);
+    if (user && !user.has_seen_onboarding && !user.must_change_password) setShowTour(true);
   }, [user]);
   const [tab, setTab] = useState(initialTab || "stats");
   const [inactiveMsg, setInactiveMsg] = useState(false);
@@ -184,6 +185,9 @@ export default function Dashboard({ user: initialUser, token, onNavigate, onLogo
           );
         })}
       </div>
+      {user?.must_change_password && (
+        <ForcePasswordChangeModal token={token} onSuccess={() => setUser({ ...user, must_change_password: false })} />
+      )}
       <OnboardingTour isOpen={showTour} onComplete={() => setShowTour(false)} onNeedTab={setTab} />
     </div>
   );
